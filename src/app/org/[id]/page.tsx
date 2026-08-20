@@ -32,16 +32,21 @@ export default async function OrgHome({
           <span className="text-foreground">{group?.name ?? id}</span>
           <span className="ml-1">({affiliation.role})</span>
         </p>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        >
-          <button type="submit" className="text-sm text-muted underline">
-            ログアウト
-          </button>
-        </form>
+        <div className="flex items-center gap-4">
+          <Link href="/me" className="text-sm text-muted underline">
+            プロフィール
+          </Link>
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <button type="submit" className="text-sm text-muted underline">
+              ログアウト
+            </button>
+          </form>
+        </div>
       </header>
 
       <nav className="flex gap-6 border-b border-surface px-6 py-3 text-sm text-muted">
