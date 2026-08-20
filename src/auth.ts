@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { findPersonByEmail } from "@/lib/sheet";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -14,9 +13,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user }) {
-      if (!user.email) return false;
-      const person = await findPersonByEmail(user.email);
-      return !!person;
+      // メールアドレスが取れないGoogleアカウントだけ弾く。
+      // 「人」シートへの登録有無はアプリ側の画面で判定し、
+      // 未登録の人には申請フォームを見せる(拒否して終わりにしない)。
+      return !!user.email;
     },
   },
 });

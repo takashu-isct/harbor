@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
+  findApplicationsByEmail,
   findGroupById,
   findPersonByEmail,
 } from "@/lib/sheet";
@@ -13,9 +14,10 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const [person, affiliations] = await Promise.all([
+  const [person, affiliations, applications] = await Promise.all([
     findPersonByEmail(session.user.email),
     findActiveAffiliationsByEmail(session.user.email),
+    findApplicationsByEmail(session.user.email),
   ]);
 
   const groups = await Promise.all(
@@ -90,7 +92,18 @@ export default async function ProfilePage() {
             <span aria-hidden>📝</span>
             自分の申請一覧
           </h2>
-          <p className="text-sm text-muted">準備中です。</p>
+          {applications.length === 0 ? (
+            <p className="text-sm text-muted">申請はありません。</p>
+          ) : (
+            <ul className="flex flex-col gap-1 text-sm">
+              {applications.map((a, i) => (
+                <li key={i} className="flex max-w-md justify-between">
+                  <span className="text-foreground">{a.groupId}</span>
+                  <span className="text-muted">{a.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section>

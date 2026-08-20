@@ -18,7 +18,7 @@ export default async function LoginPage({
 
       {error && (
         <p className="max-w-sm rounded-md bg-surface px-4 py-3 text-center text-sm text-danger">
-          このメールアドレスはHarborに登録されていません。心当たりがない場合は団体の管理者にご連絡ください。
+          ログインに失敗しました。もう一度お試しください。
         </p>
       )}
 

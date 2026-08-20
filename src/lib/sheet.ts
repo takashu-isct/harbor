@@ -11,6 +11,38 @@ function getSheetsClient() {
   return google.sheets({ version: "v4", auth });
 }
 
+async function getSheetIdByTitle(title: string): Promise<number> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const sheet = res.data.sheets?.find((s) => s.properties?.title === title);
+  if (sheet?.properties?.sheetId == null) {
+    throw new Error(`sheet not found: ${title}`);
+  }
+  return sheet.properties.sheetId;
+}
+
+async function deleteSheetRow(title: string, rowNumber: number): Promise<void> {
+  const sheets = getSheetsClient();
+  const sheetId = await getSheetIdByTitle(title);
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SHEET_ID,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: "ROWS",
+              startIndex: rowNumber - 1,
+              endIndex: rowNumber,
+            },
+          },
+        },
+      ],
+    },
+  });
+}
+
 export type Person = {
   email: string;
   name: string;
@@ -77,6 +109,20 @@ export async function findGroupById(id: string): Promise<Group | null> {
   return { id: row[0], name: row[1] ?? "", status: row[2] ?? "", foundedAt: row[3] ?? "" };
 }
 
+export async function findAllGroups(): Promise<Group[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "団体!A2:D",
+  });
+  return (res.data.values ?? []).map((r) => ({
+    id: r[0],
+    name: r[1] ?? "",
+    status: r[2] ?? "",
+    foundedAt: r[3] ?? "",
+  }));
+}
+
 export type GroupMember = {
   email: string;
   name: string;
@@ -124,6 +170,12 @@ export async function addGroupMember(params: {
       },
     });
   }
+
+  const alreadyMember = (await findActiveAffiliationsByEmail(params.email)).some(
+    (a) => a.groupId === params.groupId
+  );
+  if (alreadyMember) return;
+
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
     range: "団体所属!A:E",
@@ -132,6 +184,239 @@ export async function addGroupMember(params: {
       values: [[params.email, params.groupId, params.role, params.permission, ""]],
     },
   });
+}
+
+export async function removeGroupMember(groupId: string, email: string): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "団体所属!A2:E",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex(
+    (r) => r[0]?.trim().toLowerCase() === email.toLowerCase() && r[1] === groupId
+  );
+  if (idx === -1) return;
+  await deleteSheetRow("団体所属", idx + 2);
+}
+
+export async function updateGroupMemberPermission(params: {
+  groupId: string;
+  email: string;
+  permission: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "団体所属!A2:E",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex(
+    (r) => r[0]?.trim().toLowerCase() === params.email.toLowerCase() && r[1] === params.groupId
+  );
+  if (idx === -1) return;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `団体所属!D${idx + 2}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[params.permission]] },
+  });
+}
+
+export type Role = {
+  groupId: string;
+  name: string;
+  isAdmin: boolean;
+};
+
+export async function findRoles(groupId: string): Promise<Role[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "ロール!A2:C",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => r[0] === groupId)
+    .map((r) => ({
+      groupId: r[0],
+      name: r[1] ?? "",
+      isAdmin: String(r[2]).toUpperCase() === "TRUE",
+    }));
+}
+
+export async function ensureDefaultRoles(groupId: string): Promise<Role[]> {
+  const roles = await findRoles(groupId);
+  if (roles.length > 0) return roles;
+  await addRole({ groupId, name: "管理者", isAdmin: true });
+  await addRole({ groupId, name: "メンバー", isAdmin: false });
+  return findRoles(groupId);
+}
+
+export async function addRole(params: {
+  groupId: string;
+  name: string;
+  isAdmin: boolean;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "ロール!A:C",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[params.groupId, params.name, params.isAdmin ? "TRUE" : "FALSE"]],
+    },
+  });
+}
+
+export async function isAdminRole(groupId: string, roleName: string): Promise<boolean> {
+  const roles = await findRoles(groupId);
+  return roles.some((r) => r.name === roleName && r.isAdmin);
+}
+
+export type Application = {
+  groupId: string;
+  email: string;
+  name: string;
+  desiredRole: string;
+  status: "未処理" | "承認" | "却下";
+  submittedAt: string;
+};
+
+export async function findApplicationsByGroup(groupId: string): Promise<Application[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "申請!A2:F",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => r[0] === groupId)
+    .map((r) => ({
+      groupId: r[0],
+      email: r[1] ?? "",
+      name: r[2] ?? "",
+      desiredRole: r[3] ?? "",
+      status: (r[4] === "承認" || r[4] === "却下" ? r[4] : "未処理") as Application["status"],
+      submittedAt: r[5] ?? "",
+    }));
+}
+
+export async function findApplicationsByEmail(email: string): Promise<Application[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "申請!A2:F",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => r[1]?.trim().toLowerCase() === email.toLowerCase())
+    .map((r) => ({
+      groupId: r[0],
+      email: r[1] ?? "",
+      name: r[2] ?? "",
+      desiredRole: r[3] ?? "",
+      status: (r[4] === "承認" || r[4] === "却下" ? r[4] : "未処理") as Application["status"],
+      submittedAt: r[5] ?? "",
+    }));
+}
+
+export async function addApplication(params: {
+  groupId: string;
+  email: string;
+  name: string;
+  desiredRole: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "申請!A:F",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [
+        [params.groupId, params.email, params.name, params.desiredRole, "未処理", new Date().toISOString()],
+      ],
+    },
+  });
+}
+
+export async function decideApplication(params: {
+  groupId: string;
+  email: string;
+  submittedAt: string;
+  status: "承認" | "却下";
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "申請!A2:F",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex(
+    (r) =>
+      r[0] === params.groupId &&
+      r[1]?.trim().toLowerCase() === params.email.toLowerCase() &&
+      r[5] === params.submittedAt
+  );
+  if (idx === -1) return;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `申請!E${idx + 2}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[params.status]] },
+  });
+}
+
+export type LinkItem = {
+  ownerId: string;
+  label: string;
+  url: string;
+  iconUrl: string;
+  visibility: string;
+};
+
+export async function findLinksByOwner(ownerId: string): Promise<LinkItem[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "リンク!A2:E",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => r[0] === ownerId)
+    .map((r) => ({
+      ownerId: r[0],
+      label: r[1] ?? "",
+      url: r[2] ?? "",
+      iconUrl: r[3] ?? "",
+      visibility: r[4] ?? "",
+    }));
+}
+
+export async function addLink(params: {
+  ownerId: string;
+  label: string;
+  url: string;
+  iconUrl: string;
+  visibility: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "リンク!A:E",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[params.ownerId, params.label, params.url, params.iconUrl, params.visibility]],
+    },
+  });
+}
+
+export async function removeLink(ownerId: string, url: string): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "リンク!A2:E",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex((r) => r[0] === ownerId && r[2] === url);
+  if (idx === -1) return;
+  await deleteSheetRow("リンク", idx + 2);
 }
 
 export type LedgerEntry = {
