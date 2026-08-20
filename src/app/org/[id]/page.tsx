@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { findActiveAffiliationsByEmail, findGroupById } from "@/lib/sheet";
@@ -47,6 +48,14 @@ export default async function OrgHome({
         {TABS.map((label) => (
           <span key={label}>{label}</span>
         ))}
+        {affiliation.permission === "admin" && (
+          <Link
+            href={`/org/${id}/members`}
+            className="text-foreground underline"
+          >
+            メンバー管理
+          </Link>
+        )}
       </nav>
 
       <main className="flex flex-1 items-center justify-center text-muted">

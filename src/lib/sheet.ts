@@ -6,7 +6,7 @@ function getSheetsClient() {
   const auth = new google.auth.JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
   return google.sheets({ version: "v4", auth });
 }
@@ -75,4 +75,61 @@ export async function findGroupById(id: string): Promise<Group | null> {
   const row = rows.find((r) => r[0] === id);
   if (!row) return null;
   return { id: row[0], name: row[1] ?? "", status: row[2] ?? "", foundedAt: row[3] ?? "" };
+}
+
+export type GroupMember = {
+  email: string;
+  name: string;
+  role: string;
+  permission: string;
+  expiresAt: string;
+};
+
+export async function findGroupMembers(groupId: string): Promise<GroupMember[]> {
+  const sheets = getSheetsClient();
+  const [affRes, peopleRes] = await Promise.all([
+    sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: "団体所属!A2:E" }),
+    sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: "人!A2:D" }),
+  ]);
+  const nameByEmail = new Map(
+    (peopleRes.data.values ?? []).map((r) => [r[0]?.trim().toLowerCase(), r[1] ?? ""])
+  );
+  return (affRes.data.values ?? [])
+    .filter((r) => r[1] === groupId)
+    .map((r) => ({
+      email: r[0],
+      name: nameByEmail.get(r[0]?.trim().toLowerCase()) ?? "",
+      role: r[2] ?? "",
+      permission: r[3] ?? "",
+      expiresAt: r[4] ?? "",
+    }));
+}
+
+export async function addGroupMember(params: {
+  groupId: string;
+  email: string;
+  name: string;
+  role: string;
+  permission: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  const existing = await findPersonByEmail(params.email);
+  if (!existing) {
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SHEET_ID,
+      range: "人!A:D",
+      valueInputOption: "USER_ENTERED",
+      requestBody: {
+        values: [[params.email, params.name, "", new Date().toISOString().slice(0, 10)]],
+      },
+    });
+  }
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "団体所属!A:E",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[params.email, params.groupId, params.role, params.permission, ""]],
+    },
+  });
 }
