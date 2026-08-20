@@ -37,6 +37,13 @@ export default async function Home() {
         <p className="max-w-sm text-foreground">
           まだ所属がありません。団体の管理者に、団体所属の登録を依頼してください。
         </p>
+        <Link
+          href="/me"
+          className="flex items-center gap-2 rounded-md bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+        >
+          <span aria-hidden>🙍</span>
+          個人プロフィールを見る
+        </Link>
         <LogoutButton />
       </div>
     );
@@ -58,12 +65,22 @@ export default async function Home() {
           <li key={affiliation.groupId}>
             <Link
               href={`/org/${affiliation.groupId}`}
-              className="rounded-md bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+              className="flex items-center gap-2 rounded-md bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
             >
+              <span aria-hidden>🏢</span>
               {group?.name ?? affiliation.groupId}({affiliation.role})
             </Link>
           </li>
         ))}
+        <li>
+          <Link
+            href="/me"
+            className="flex items-center gap-2 rounded-md bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+          >
+            <span aria-hidden>🙍</span>
+            個人
+          </Link>
+        </li>
       </ul>
       <LogoutButton />
     </div>

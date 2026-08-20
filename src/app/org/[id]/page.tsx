@@ -3,7 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { findActiveAffiliationsByEmail, findGroupById } from "@/lib/sheet";
 
-const TABS = ["会計", "Drive", "文書", "イベント"];
+const TABS = [
+  { icon: "💰", label: "会計" },
+  { icon: "📁", label: "Drive" },
+  { icon: "📄", label: "文書" },
+  { icon: "📅", label: "イベント" },
+];
 
 export default async function OrgHome({
   params,
@@ -50,14 +55,18 @@ export default async function OrgHome({
       </header>
 
       <nav className="flex gap-6 border-b border-surface px-6 py-3 text-sm text-muted">
-        {TABS.map((label) => (
-          <span key={label}>{label}</span>
+        {TABS.map(({ icon, label }) => (
+          <span key={label} className="flex items-center gap-1.5">
+            <span aria-hidden>{icon}</span>
+            {label}
+          </span>
         ))}
         {affiliation.permission === "admin" && (
           <Link
             href={`/org/${id}/members`}
-            className="text-foreground underline"
+            className="flex items-center gap-1.5 text-foreground underline"
           >
+            <span aria-hidden>👥</span>
             メンバー管理
           </Link>
         )}
