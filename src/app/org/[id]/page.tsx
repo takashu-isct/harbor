@@ -4,7 +4,6 @@ import { auth, signOut } from "@/auth";
 import { findActiveAffiliationsByEmail, findGroupById } from "@/lib/sheet";
 
 const TABS = [
-  { icon: "💰", label: "会計" },
   { icon: "📁", label: "Drive" },
   { icon: "📄", label: "文書" },
   { icon: "📅", label: "イベント" },
@@ -55,6 +54,13 @@ export default async function OrgHome({
       </header>
 
       <nav className="flex gap-6 border-b border-surface px-6 py-3 text-sm text-muted">
+        <Link
+          href={`/org/${id}/accounting`}
+          className="flex items-center gap-1.5 text-foreground underline"
+        >
+          <span aria-hidden>💰</span>
+          会計
+        </Link>
         {TABS.map(({ icon, label }) => (
           <span key={label} className="flex items-center gap-1.5">
             <span aria-hidden>{icon}</span>

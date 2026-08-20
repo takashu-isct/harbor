@@ -133,3 +133,62 @@ export async function addGroupMember(params: {
     },
   });
 }
+
+export type LedgerEntry = {
+  groupId: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: "収入" | "支出";
+  recordedBy: string;
+  recordedAt: string;
+};
+
+export async function findLedgerEntries(groupId: string): Promise<LedgerEntry[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "会計!A2:G",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => r[0] === groupId)
+    .map((r) => ({
+      groupId: r[0],
+      date: r[1] ?? "",
+      description: r[2] ?? "",
+      amount: Number(r[3] ?? 0),
+      type: (r[4] === "支出" ? "支出" : "収入") as "収入" | "支出",
+      recordedBy: r[5] ?? "",
+      recordedAt: r[6] ?? "",
+    }))
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+}
+
+export async function addLedgerEntry(params: {
+  groupId: string;
+  date: string;
+  description: string;
+  amount: number;
+  type: "収入" | "支出";
+  recordedBy: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "会計!A:G",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [
+        [
+          params.groupId,
+          params.date,
+          params.description,
+          params.amount,
+          params.type,
+          params.recordedBy,
+          new Date().toISOString(),
+        ],
+      ],
+    },
+  });
+}
