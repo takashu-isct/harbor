@@ -57,3 +57,22 @@ export async function findActiveAffiliationsByEmail(email: string): Promise<Affi
       expiresAt: r[4] ?? "",
     }));
 }
+
+export type Group = {
+  id: string;
+  name: string;
+  status: string;
+  foundedAt: string;
+};
+
+export async function findGroupById(id: string): Promise<Group | null> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "団体!A2:D",
+  });
+  const rows = res.data.values ?? [];
+  const row = rows.find((r) => r[0] === id);
+  if (!row) return null;
+  return { id: row[0], name: row[1] ?? "", status: row[2] ?? "", foundedAt: row[3] ?? "" };
+}
