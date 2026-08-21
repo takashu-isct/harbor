@@ -28,7 +28,7 @@ export async function LocationSwitcher({
   return (
     <details className="group relative">
       <summary className="flex cursor-pointer list-none items-center gap-1 text-sm text-muted [&::-webkit-details-marker]:hidden">
-        今の立場: <span className="text-foreground">{currentLabel}</span>
+        ステータス: <span className="text-foreground">{currentLabel}</span>
         <span className="text-muted" aria-hidden>
           ▾
         </span>
