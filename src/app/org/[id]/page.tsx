@@ -1,7 +1,10 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
+  findApplicationsByGroup,
+  findFoundingApplications,
   findGroupById,
   findLinksByOwner,
   isAdminRole,
@@ -37,15 +40,22 @@ export default async function OrgHome({
     notFound();
   }
 
-  const [group, links, isAdmin, harborAdmin] = await Promise.all([
-    findGroupById(id),
-    findLinksByOwner(id),
-    isAdminRole(id, affiliation.permission),
-    isHarborAdmin(session.user.email),
-  ]);
+  const [group, links, isAdmin, harborAdmin, applications, foundingApplications] =
+    await Promise.all([
+      findGroupById(id),
+      findLinksByOwner(id),
+      isAdminRole(id, affiliation.permission),
+      isHarborAdmin(session.user.email),
+      findApplicationsByGroup(id),
+      findFoundingApplications(),
+    ]);
 
   const hiddenTools = group?.hiddenTools ?? [];
   const visibleTools = ORG_TOOLS.filter((t) => !hiddenTools.includes(t.id));
+  const pendingCount = applications.filter((a) => a.status === "未処理").length;
+  const foundingPendingCount = foundingApplications.filter(
+    (a) => a.status === "未処理"
+  ).length;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -75,7 +85,17 @@ export default async function OrgHome({
 
       <main className="flex flex-1 flex-col gap-8 px-6 py-6">
         <section>
-          <h2 className="mb-3 text-sm text-muted">Harbor</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm text-muted">CREW Harbor</h2>
+            {isAdmin && (
+              <Link
+                href={`/org/${id}/settings`}
+                className="text-xs text-muted underline"
+              >
+                ⚙️ 表示設定
+              </Link>
+            )}
+          </div>
           <div className="flex flex-wrap gap-4">
             {visibleTools.map((t) => (
               <AppTile
@@ -91,26 +111,35 @@ export default async function OrgHome({
                 href={`/org/${id}/members`}
                 icon="👥"
                 label="メンバー管理"
+                badge={pendingCount || undefined}
               />
             )}
             {isAdmin && (
               <AppTile href={`/org/${id}/roles`} icon="🎭" label="ロール管理" />
             )}
-            {isAdmin && (
-              <AppTile
-                href={`/org/${id}/settings`}
-                icon="⚙️"
-                label="表示設定"
-              />
-            )}
             {harborAdmin && (
-              <AppTile href="/admin" icon="🛠️" label="Harbor管理" />
+              <AppTile
+                href="/admin"
+                icon="🛠️"
+                label="Harbor管理"
+                badge={foundingPendingCount || undefined}
+              />
             )}
           </div>
         </section>
 
         <section>
-          <h2 className="mb-3 text-sm text-muted">外部リンク</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm text-muted">外部リンク</h2>
+            {isAdmin && (
+              <Link
+                href={`/org/${id}/links`}
+                className="text-xs text-muted underline"
+              >
+                ⚙️ リンク管理
+              </Link>
+            )}
+          </div>
           <div className="flex flex-wrap gap-4">
             {links.map((l) => (
               <AppTile

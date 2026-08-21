@@ -8,6 +8,7 @@ export function AppTile({
   iconUrl,
   label,
   note,
+  badge,
 }: {
   href?: string;
   external?: boolean;
@@ -16,15 +17,21 @@ export function AppTile({
   iconUrl?: string;
   label: string;
   note?: string;
+  badge?: number;
 }) {
   const inner = (
     <div className="flex w-20 flex-col items-center gap-1.5 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-none bg-surface text-2xl">
+      <div className="relative flex h-16 w-16 items-center justify-center rounded-none bg-surface text-2xl">
         {iconUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={iconUrl} alt="" className="h-8 w-8 rounded-none" />
         ) : (
           <span aria-hidden>{icon}</span>
+        )}
+        {!!badge && (
+          <span className="absolute -right-2 -top-2 flex h-5 min-w-[1.25rem] items-center justify-center rounded-none bg-danger px-1 text-[10px] font-semibold text-white">
+            {badge}
+          </span>
         )}
       </div>
       <span className="text-xs text-foreground">{label}</span>

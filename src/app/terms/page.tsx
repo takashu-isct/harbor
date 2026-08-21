@@ -8,14 +8,14 @@ export default function TermsPage() {
           ← ログイン画面に戻る
         </Link>
         <h1 className="mt-2 text-xl font-semibold text-foreground">
-          Harbor 利用規約
+          CREW Harbor 利用規約
         </h1>
       </div>
 
       <section className="flex flex-col gap-2 text-sm text-foreground">
         <h2 className="text-base font-semibold">1. このサービスについて</h2>
         <p>
-          Harbor(以下「本サービス」)は、東京科学大学の学生団体CREWが開発・運営する、
+          CREW Harbor(以下「本サービス」)は、東京科学大学の学生団体CREWが開発・運営する、
           学生団体の運営を1箇所にまとめるためのWebサービスです。
         </p>
       </section>

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Harbor",
+  title: "CREW Harbor",
   description: "学生団体の運営を1箇所にまとめるWebサービス",
 };
 

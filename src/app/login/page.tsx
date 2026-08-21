@@ -27,7 +27,7 @@ const features = [
   {
     icon: "📒",
     title: "引き継ぎがラクになる",
-    body: "会計や名簿、リンク集がHarborに積み上がっていく。毎年ゼロから資料を作り直さなくていい。",
+    body: "会計や名簿、リンク集がCREW Harborに積み上がっていく。毎年ゼロから資料を作り直さなくていい。",
   },
   {
     icon: "💰",
@@ -58,7 +58,7 @@ export default async function LoginPage({
       <header className="flex items-center justify-between border-b border-surface px-6 py-3">
         <div className="inline-flex items-center rounded-none bg-white px-3 py-1.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-horizontal.jpg" alt="Harbor" className="h-6 w-auto" />
+          <img src="/logo-horizontal.jpg" alt="CREW Harbor" className="h-6 w-auto" />
         </div>
         <LoginButton compact />
       </header>
@@ -80,10 +80,10 @@ export default async function LoginPage({
 
       <section className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-6 py-16 text-center">
         <div className="flex flex-col gap-3">
-          <h1 className="text-xl font-semibold text-foreground">Harborについて</h1>
+          <h1 className="text-xl font-semibold text-foreground">CREW Harborについて</h1>
           <p className="text-sm text-muted">
-            Harborは、東京科学大学の学生団体CREWが運営する、学生団体の運営を1箇所にまとめるワークスペースです。
-            会計・名簿・権限管理など、団体運営に必要なものをHarborがまとめて次の代へ引き継いでいきます。
+            CREW Harborは、東京科学大学の学生団体CREWが運営する、学生団体の運営を1箇所にまとめるワークスペースです。
+            会計・名簿・権限管理など、団体運営に必要なものをCREW Harborがまとめて次の代へ引き継いでいきます。
           </p>
         </div>
 

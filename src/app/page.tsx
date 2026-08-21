@@ -78,7 +78,7 @@ async function ApplicationGate({
     <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
       <p className="text-sm text-muted">{email} でログイン中</p>
       <p className="max-w-sm text-foreground">
-        まだHarborに登録されていません。所属したい団体に申請するか、
+        まだCREW Harborに登録されていません。所属したい団体に申請するか、
         新しい団体の立ち上げを申請できます。承認されると使えるようになります。
       </p>
 
