@@ -87,7 +87,7 @@ export default async function RolesPage({
           type="text"
           placeholder="ロール名(例: 会計担当)"
           required
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <label className="flex items-center gap-2 text-sm text-muted">
           <input type="checkbox" name="isAdmin" />
@@ -95,7 +95,7 @@ export default async function RolesPage({
         </label>
         <button
           type="submit"
-          className="self-start rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
         >
           追加
         </button>

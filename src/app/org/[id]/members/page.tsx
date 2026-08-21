@@ -140,12 +140,15 @@ export default async function MembersPage({
 
       {pendingApplications.length > 0 && (
         <section>
-          <h2 className="mb-3 text-sm text-muted">申請({pendingApplications.length}件)</h2>
+          <h2 className="mb-3 flex items-center gap-2 text-sm text-muted">
+            <span aria-hidden>📋</span>
+            タスク・承認待ちの申請({pendingApplications.length}件)
+          </h2>
           <ul className="flex flex-col gap-2">
             {pendingApplications.map((a, i) => (
               <li
                 key={i}
-                className="flex flex-wrap items-center gap-3 rounded-md bg-surface px-4 py-3 text-sm"
+                className="flex flex-wrap items-center gap-3 rounded-none bg-surface px-4 py-3 text-sm"
               >
                 <span className="text-foreground">{a.name || a.email}</span>
                 <span className="text-muted">{a.email}</span>
@@ -157,7 +160,7 @@ export default async function MembersPage({
                   <input type="hidden" name="submittedAt" value={a.submittedAt} />
                   <button
                     type="submit"
-                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
+                    className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
                   >
                     承認
                   </button>
@@ -167,7 +170,7 @@ export default async function MembersPage({
                   <input type="hidden" name="submittedAt" value={a.submittedAt} />
                   <button
                     type="submit"
-                    className="rounded-md bg-danger/20 px-3 py-1.5 text-xs font-medium text-danger transition hover:brightness-110"
+                    className="rounded-none bg-danger/20 px-3 py-1.5 text-xs font-medium text-danger transition hover:brightness-110"
                   >
                     却下
                   </button>
@@ -201,7 +204,7 @@ export default async function MembersPage({
                     <select
                       name="permission"
                       defaultValue={m.permission}
-                      className="rounded-md bg-surface px-2 py-1 text-xs text-foreground"
+                      className="rounded-none bg-surface px-2 py-1 text-xs text-foreground"
                     >
                       {roles.map((r) => (
                         <option key={r.name} value={r.name}>
@@ -211,7 +214,7 @@ export default async function MembersPage({
                     </select>
                     <button
                       type="submit"
-                      className="rounded-md bg-surface px-2 py-1 text-xs text-muted underline"
+                      className="rounded-none bg-surface px-2 py-1 text-xs text-muted underline"
                     >
                       変更
                     </button>
@@ -222,7 +225,7 @@ export default async function MembersPage({
                     <input type="hidden" name="email" value={m.email} />
                     <button
                       type="submit"
-                      className="rounded-md bg-danger/20 px-2 py-1 text-xs text-danger"
+                      className="rounded-none bg-danger/20 px-2 py-1 text-xs text-danger"
                     >
                       削除
                     </button>
@@ -241,20 +244,20 @@ export default async function MembersPage({
           type="email"
           placeholder="メールアドレス"
           required
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <input
           name="name"
           type="text"
           placeholder="氏名"
           required
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <input
           name="role"
           type="text"
           placeholder="役職(例: 部員)"
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <label className="flex items-center gap-2 text-sm text-muted">
           <input type="checkbox" name="asAdmin" />
@@ -262,7 +265,7 @@ export default async function MembersPage({
         </label>
         <button
           type="submit"
-          className="self-start rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
         >
           追加
         </button>

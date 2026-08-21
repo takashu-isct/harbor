@@ -90,17 +90,18 @@ export default async function HarborAdminPage() {
       </div>
 
       <section>
-        <h2 className="mb-3 text-sm text-muted">
-          設立申請({pending.length}件)
+        <h2 className="mb-3 flex items-center gap-2 text-sm text-muted">
+          <span aria-hidden>📋</span>
+          タスク・団体の設立申請({pending.length}件)
         </h2>
         {pending.length === 0 ? (
-          <p className="text-sm text-muted">未処理の設立申請はありません。</p>
+          <p className="text-sm text-muted">未処理のタスクはありません。</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {pending.map((a, i) => (
               <li
                 key={i}
-                className="flex flex-col gap-3 rounded-md bg-surface px-4 py-3 text-sm"
+                className="flex flex-col gap-3 rounded-none bg-surface px-4 py-3 text-sm"
               >
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="font-medium text-foreground">{a.newGroupName}</span>
@@ -123,11 +124,11 @@ export default async function HarborAdminPage() {
                     type="text"
                     required
                     placeholder="団体ID(半角英数字、例: tea-club)"
-                    className="rounded-md bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted"
+                    className="rounded-none bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted"
                   />
                   <button
                     type="submit"
-                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
+                    className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
                   >
                     承認して団体を作成
                   </button>
@@ -137,7 +138,7 @@ export default async function HarborAdminPage() {
                   <input type="hidden" name="submittedAt" value={a.submittedAt} />
                   <button
                     type="submit"
-                    className="rounded-md bg-danger/20 px-3 py-1.5 text-xs font-medium text-danger transition hover:brightness-110"
+                    className="rounded-none bg-danger/20 px-3 py-1.5 text-xs font-medium text-danger transition hover:brightness-110"
                   >
                     却下
                   </button>
@@ -155,7 +156,7 @@ export default async function HarborAdminPage() {
             {decided.map((a, i) => (
               <li
                 key={i}
-                className="flex flex-wrap items-center gap-3 rounded-md bg-surface/50 px-4 py-2"
+                className="flex flex-wrap items-center gap-3 rounded-none bg-surface/50 px-4 py-2"
               >
                 <span className="text-foreground">{a.newGroupName}</span>
                 <span className="text-muted">{a.email}</span>

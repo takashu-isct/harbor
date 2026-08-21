@@ -51,18 +51,49 @@ export type Person = {
   name: string;
   internalId: string;
   registeredAt: string;
+  hiddenTools: string[];
 };
+
+function parseHiddenTools(cell: string | undefined): string[] {
+  return (cell ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
 export async function findPersonByEmail(email: string): Promise<Person | null> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "人!A2:D",
+    range: "人!A2:E",
   });
   const rows = res.data.values ?? [];
   const row = rows.find((r) => r[0]?.trim().toLowerCase() === email.toLowerCase());
   if (!row) return null;
-  return { email: row[0], name: row[1] ?? "", internalId: row[2] ?? "", registeredAt: row[3] ?? "" };
+  return {
+    email: row[0],
+    name: row[1] ?? "",
+    internalId: row[2] ?? "",
+    registeredAt: row[3] ?? "",
+    hiddenTools: parseHiddenTools(row[4]),
+  };
+}
+
+export async function updatePersonHiddenTools(email: string, hidden: string[]): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "人!A2:E",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex((r) => r[0]?.trim().toLowerCase() === email.toLowerCase());
+  if (idx === -1) return;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `人!E${idx + 2}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[hidden.join(",")]] },
+  });
 }
 
 export type Affiliation = {
@@ -98,32 +129,57 @@ export type Group = {
   name: string;
   status: string;
   foundedAt: string;
+  hiddenTools: string[];
 };
 
 export async function findGroupById(id: string): Promise<Group | null> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "団体!A2:D",
+    range: "団体!A2:E",
   });
   const rows = res.data.values ?? [];
   const row = rows.find((r) => r[0] === id);
   if (!row) return null;
-  return { id: row[0], name: row[1] ?? "", status: row[2] ?? "", foundedAt: row[3] ?? "" };
+  return {
+    id: row[0],
+    name: row[1] ?? "",
+    status: row[2] ?? "",
+    foundedAt: row[3] ?? "",
+    hiddenTools: parseHiddenTools(row[4]),
+  };
 }
 
 export async function findAllGroups(): Promise<Group[]> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "団体!A2:D",
+    range: "団体!A2:E",
   });
   return (res.data.values ?? []).map((r) => ({
     id: r[0],
     name: r[1] ?? "",
     status: r[2] ?? "",
     foundedAt: r[3] ?? "",
+    hiddenTools: parseHiddenTools(r[4]),
   }));
+}
+
+export async function updateGroupHiddenTools(groupId: string, hidden: string[]): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "団体!A2:E",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex((r) => r[0] === groupId);
+  if (idx === -1) return;
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `団体!E${idx + 2}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[hidden.join(",")]] },
+  });
 }
 
 export async function addGroup(params: {

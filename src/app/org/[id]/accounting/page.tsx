@@ -120,14 +120,14 @@ export default async function AccountingPage({
           type="date"
           defaultValue={today}
           required
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground"
         />
         <input
           name="description"
           type="text"
           placeholder="内容(例: 部費徴収)"
           required
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <input
           name="amount"
@@ -135,19 +135,19 @@ export default async function AccountingPage({
           min="1"
           placeholder="金額"
           required
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <select
           name="type"
           defaultValue="収入"
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground"
         >
           <option value="収入">収入</option>
           <option value="支出">支出</option>
         </select>
         <button
           type="submit"
-          className="self-start rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
         >
           追加
         </button>

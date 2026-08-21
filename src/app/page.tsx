@@ -98,14 +98,14 @@ async function ApplicationGate({
 
       <form
         action={submitApplication}
-        className="flex w-full max-w-sm flex-col gap-3 rounded-md bg-surface/40 p-4"
+        className="flex w-full max-w-sm flex-col gap-3 rounded-none bg-surface/40 p-4"
       >
         <h2 className="text-left text-sm text-muted">すでにある団体に参加を申請する</h2>
         <select
           name="groupId"
           required
           defaultValue=""
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground"
         >
           <option value="" disabled>
             団体を選択
@@ -120,17 +120,17 @@ async function ApplicationGate({
           type="text"
           value={email}
           readOnly
-          className="rounded-md bg-surface px-3 py-2 text-sm text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-muted"
         />
         <input
           name="desiredRole"
           type="text"
           placeholder="希望する役職(任意、例: 一般部員)"
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <button
           type="submit"
-          className="rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition hover:brightness-110"
+          className="rounded-none bg-accent px-6 py-3 text-sm font-medium text-white transition hover:brightness-110"
         >
           申請する
         </button>
@@ -138,7 +138,7 @@ async function ApplicationGate({
 
       <form
         action={submitFoundingRequest}
-        className="flex w-full max-w-sm flex-col gap-3 rounded-md bg-surface/40 p-4"
+        className="flex w-full max-w-sm flex-col gap-3 rounded-none bg-surface/40 p-4"
       >
         <h2 className="text-left text-sm text-muted">新しい団体を立ち上げる</h2>
         <input
@@ -146,14 +146,14 @@ async function ApplicationGate({
           type="text"
           placeholder="団体名"
           required
-          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
         <p className="text-left text-xs text-muted">
           開発部が内容を確認のうえ、団体を作成します。少しお時間をいただく場合があります。
         </p>
         <button
           type="submit"
-          className="rounded-md bg-surface px-6 py-3 text-sm font-medium text-foreground transition hover:brightness-110"
+          className="rounded-none bg-surface px-6 py-3 text-sm font-medium text-foreground transition hover:brightness-110"
         >
           設立を申請する
         </button>
@@ -192,7 +192,7 @@ export default async function Home() {
         </p>
         <Link
           href="/me"
-          className="flex items-center gap-2 rounded-md bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+          className="flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
         >
           <span aria-hidden>🙍</span>
           個人プロフィールを見る
@@ -218,7 +218,7 @@ export default async function Home() {
           <li key={affiliation.groupId}>
             <Link
               href={`/org/${affiliation.groupId}`}
-              className="flex items-center gap-2 rounded-md bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+              className="flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
             >
               <span aria-hidden>🏢</span>
               {group?.name ?? affiliation.groupId}({affiliation.role})
@@ -228,7 +228,7 @@ export default async function Home() {
         <li>
           <Link
             href="/me"
-            className="flex items-center gap-2 rounded-md bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+            className="flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
           >
             <span aria-hidden>🙍</span>
             個人

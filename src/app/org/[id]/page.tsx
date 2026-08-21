@@ -8,50 +8,16 @@ import {
   isAdminRole,
   isHarborAdmin,
 } from "@/lib/sheet";
+import { ORG_TOOLS } from "@/lib/tools";
+import { AddTile, AppTile } from "@/components/AppTile";
 
-function AppTile({
-  href,
-  external,
-  disabled,
-  icon,
-  iconUrl,
-  label,
-  note,
-}: {
-  href?: string;
-  external?: boolean;
-  disabled?: boolean;
-  icon?: string;
-  iconUrl?: string;
-  label: string;
-  note?: string;
-}) {
-  const inner = (
-    <div className="flex w-20 flex-col items-center gap-1.5 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface text-2xl">
-        {iconUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={iconUrl} alt="" className="h-8 w-8 rounded" />
-        ) : (
-          <span aria-hidden>{icon}</span>
-        )}
-      </div>
-      <span className="text-xs text-foreground">{label}</span>
-      {note && <span className="text-[10px] text-muted">{note}</span>}
-    </div>
-  );
-
-  if (disabled || !href) {
-    return <div className="opacity-50">{inner}</div>;
+function faviconFor(url: string): string | undefined {
+  try {
+    const host = new URL(url).hostname;
+    return `https://www.google.com/s2/favicons?sz=64&domain=${host}`;
+  } catch {
+    return undefined;
   }
-  if (external) {
-    return (
-      <a href={href} target="_blank" rel="noreferrer noopener">
-        {inner}
-      </a>
-    );
-  }
-  return <Link href={href}>{inner}</Link>;
 }
 
 export default async function OrgHome({
@@ -77,6 +43,9 @@ export default async function OrgHome({
     isAdminRole(id, affiliation.permission),
     isHarborAdmin(session.user.email),
   ]);
+
+  const hiddenTools = group?.hiddenTools ?? [];
+  const visibleTools = ORG_TOOLS.filter((t) => !hiddenTools.includes(t.id));
 
   return (
     <div className="flex flex-1 flex-col">
@@ -107,15 +76,15 @@ export default async function OrgHome({
         <section>
           <h2 className="mb-3 text-sm text-muted">Harbor</h2>
           <div className="flex flex-wrap gap-4">
-            <AppTile href={`/org/${id}/accounting`} icon="💰" label="会計" />
-            <AppTile disabled icon="📁" label="Drive" />
-            <AppTile disabled icon="📄" label="文書" />
-            <AppTile disabled icon="📅" label="イベント" />
-            <AppTile
-              href={`/org/${id}/events/new`}
-              icon="🎉"
-              label="イベントを企画する"
-            />
+            {visibleTools.map((t) => (
+              <AppTile
+                key={t.id}
+                href={t.href?.(id)}
+                disabled={t.disabled}
+                icon={t.icon}
+                label={t.label}
+              />
+            ))}
             {isAdmin && (
               <AppTile
                 href={`/org/${id}/members`}
@@ -125,6 +94,13 @@ export default async function OrgHome({
             )}
             {isAdmin && (
               <AppTile href={`/org/${id}/roles`} icon="🎭" label="ロール管理" />
+            )}
+            {isAdmin && (
+              <AppTile
+                href={`/org/${id}/settings`}
+                icon="⚙️"
+                label="表示設定"
+              />
             )}
             {harborAdmin && (
               <AppTile href="/admin" icon="🛠️" label="Harbor管理" />
@@ -141,17 +117,13 @@ export default async function OrgHome({
                 href={l.url}
                 external
                 icon="🔗"
-                iconUrl={l.iconUrl || undefined}
+                iconUrl={l.iconUrl || faviconFor(l.url)}
                 label={l.label}
                 note="別ログイン"
               />
             ))}
             {isAdmin && (
-              <AppTile
-                href={`/org/${id}/links`}
-                icon="➕"
-                label="リンクを追加"
-              />
+              <AddTile href={`/org/${id}/links`} label="リンクを追加" />
             )}
             {links.length === 0 && !isAdmin && (
               <p className="text-sm text-muted">まだリンクがありません。</p>

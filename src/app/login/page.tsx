@@ -13,8 +13,8 @@ function LoginButton({ compact }: { compact?: boolean }) {
         type="submit"
         className={
           compact
-            ? "rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-            : "rounded-md bg-accent px-8 py-3.5 text-base font-medium text-white transition hover:brightness-110"
+            ? "rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+            : "rounded-none bg-accent px-8 py-3.5 text-base font-medium text-white transition hover:brightness-110"
         }
       >
         Googleでログイン
@@ -56,7 +56,7 @@ export default async function LoginPage({
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-surface px-6 py-3">
-        <div className="inline-flex items-center rounded-md bg-white px-3 py-1.5">
+        <div className="inline-flex items-center rounded-none bg-white px-3 py-1.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-horizontal.jpg" alt="Harbor" className="h-6 w-auto" />
         </div>
@@ -73,7 +73,7 @@ export default async function LoginPage({
       </section>
 
       {error && (
-        <p className="mx-auto mt-6 max-w-sm rounded-md bg-surface px-4 py-3 text-center text-sm text-danger">
+        <p className="mx-auto mt-6 max-w-sm rounded-none bg-surface px-4 py-3 text-center text-sm text-danger">
           ログインに失敗しました。もう一度お試しください。
         </p>
       )}
@@ -91,7 +91,7 @@ export default async function LoginPage({
           {features.map((f) => (
             <div
               key={f.title}
-              className="flex flex-col gap-1.5 rounded-md bg-surface p-4"
+              className="flex flex-col gap-1.5 rounded-none bg-surface p-4"
             >
               <span className="text-xl" aria-hidden>
                 {f.icon}
