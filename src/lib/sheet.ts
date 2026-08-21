@@ -659,3 +659,73 @@ export async function addLedgerEntry(params: {
     },
   });
 }
+
+export type MeetingMinutes = {
+  id: string;
+  groupId: string;
+  title: string;
+  meetingDate: string;
+  content: string;
+  authorName: string;
+  createdAt: string;
+};
+
+export async function findMinutesByGroup(groupId: string): Promise<MeetingMinutes[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "議事録!A2:G",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => r[1] === groupId)
+    .map((r) => ({
+      id: r[0] ?? "",
+      groupId: r[1] ?? "",
+      title: r[2] ?? "",
+      meetingDate: r[3] ?? "",
+      content: r[4] ?? "",
+      authorName: r[5] ?? "",
+      createdAt: r[6] ?? "",
+    }))
+    .sort((a, b) => (a.meetingDate < b.meetingDate ? 1 : a.meetingDate > b.meetingDate ? -1 : 0));
+}
+
+export async function findMinuteById(
+  groupId: string,
+  id: string
+): Promise<MeetingMinutes | null> {
+  const all = await findMinutesByGroup(groupId);
+  return all.find((m) => m.id === id) ?? null;
+}
+
+export async function addMinute(params: {
+  groupId: string;
+  title: string;
+  meetingDate: string;
+  content: string;
+  authorName: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  const id =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "議事録!A:G",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [
+        [
+          id,
+          params.groupId,
+          sanitizeCell(params.title),
+          params.meetingDate,
+          sanitizeCell(params.content),
+          sanitizeCell(params.authorName),
+          new Date().toISOString(),
+        ],
+      ],
+    },
+  });
+}
