@@ -42,7 +42,7 @@ export default async function OrgSettingsPage({
     );
     await updateGroupHiddenTools(id, newHidden);
     revalidatePath(`/org/${id}`);
-    revalidatePath(`/org/${id}/settings`);
+    redirect(`/org/${id}`);
   }
 
   return (

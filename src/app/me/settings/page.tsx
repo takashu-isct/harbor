@@ -39,7 +39,7 @@ export default async function PersonalSettingsPage() {
     ).map((t) => t.id);
     await updatePersonHiddenTools(session.user.email, newHidden);
     revalidatePath("/me");
-    revalidatePath("/me/settings");
+    redirect("/me");
   }
 
   return (
