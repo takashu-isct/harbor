@@ -3,11 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
-  findGroupById,
   findMinuteById,
   hasAdminRole,
 } from "@/lib/sheet";
 import { canAccessCategory, splitCategory } from "@/lib/minutesCategory";
+import { MinutesLayout } from "@/components/MinutesLayout";
 
 export default async function MinuteDetailPage({
   params,
@@ -26,10 +26,7 @@ export default async function MinuteDetailPage({
     notFound();
   }
 
-  const [group, minute] = await Promise.all([
-    findGroupById(id),
-    findMinuteById(id, minuteId),
-  ]);
+  const minute = await findMinuteById(id, minuteId);
   if (!minute) {
     notFound();
   }
@@ -42,26 +39,29 @@ export default async function MinuteDetailPage({
   const categoryPath = splitCategory(minute.category);
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-6 py-6">
+    <MinutesLayout groupId={id} activePath={categoryPath}>
       <div>
         <Link
           href={`/org/${id}/minutes/category/${categoryPath.map(encodeURIComponent).join("/")}`}
           className="text-sm text-muted underline"
         >
-          ← {minute.category} に戻る
+          ← {minute.category}
         </Link>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
           <span aria-hidden>📝</span>
           {minute.title}
         </h1>
-        <p className="mt-1 text-sm text-muted">
-          {minute.meetingDate} ・ {minute.authorName} ・ {group?.name ?? id}
+        <p className="mt-1 flex items-center gap-2 text-sm text-muted">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
+            {minute.authorName.slice(0, 1)}
+          </span>
+          {minute.meetingDate} ・ {minute.authorName}
         </p>
       </div>
 
       <div className="max-w-2xl whitespace-pre-wrap bg-surface px-4 py-4 text-sm text-foreground">
         {minute.content}
       </div>
-    </div>
+    </MinutesLayout>
   );
 }

@@ -22,36 +22,22 @@ export async function MinutesBrowser({
 
   return (
     <div className="flex flex-col gap-6">
-      <nav className="flex flex-wrap items-center gap-1 text-sm text-muted">
-        <Link href={`/org/${groupId}/minutes`} className="underline">
-          議事録
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <span aria-hidden>📁</span>
+          {prefixPath}
+        </h1>
+        <Link
+          href={`/org/${groupId}/minutes/new?category=${encodeURIComponent(prefixPath)}`}
+          className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+        >
+          ここに議事録を書く
         </Link>
-        {prefix.map((seg, i) => (
-          <span key={i} className="flex items-center gap-1">
-            <span>/</span>
-            <Link
-              href={`/org/${groupId}/minutes/category/${prefix
-                .slice(0, i + 1)
-                .map(encodeURIComponent)
-                .join("/")}`}
-              className="underline"
-            >
-              {seg}
-            </Link>
-          </span>
-        ))}
-      </nav>
-
-      <Link
-        href={`/org/${groupId}/minutes/new?category=${encodeURIComponent(prefixPath)}`}
-        className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-      >
-        ここに議事録を書く
-      </Link>
+      </div>
 
       {folders.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm text-muted">フォルダ</h2>
+          <h2 className="mb-2 text-xs text-muted">フォルダ</h2>
           <ul className="flex max-w-2xl flex-col gap-2">
             {folders.map((f) => (
               <li key={f}>
@@ -71,7 +57,7 @@ export async function MinutesBrowser({
       )}
 
       <section>
-        {folders.length > 0 && <h2 className="mb-2 text-sm text-muted">議事録</h2>}
+        {folders.length > 0 && <h2 className="mb-2 text-xs text-muted">議事録</h2>}
         {leaves.length === 0 ? (
           folders.length === 0 && (
             <p className="text-sm text-muted">まだ議事録がありません。</p>
@@ -84,6 +70,9 @@ export async function MinutesBrowser({
                   href={`/org/${groupId}/minutes/${m.id}`}
                   className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
                 >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
+                    {m.authorName.slice(0, 1)}
+                  </span>
                   <span className="text-muted">{m.meetingDate}</span>
                   <span className="text-foreground">{m.title}</span>
                   <span className="ml-auto text-xs text-muted">{m.authorName}</span>

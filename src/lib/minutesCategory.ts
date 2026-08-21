@@ -36,3 +36,25 @@ export function childFolders(allCategories: string[], prefix: string[]): string[
   }
   return [...names].sort();
 }
+
+export type CategoryNode = {
+  name: string;
+  path: string[];
+  children: CategoryNode[];
+};
+
+// サイドバー用のツリー構造。rootsは常にフォルダとして表示する(議事録が0件でも表示させたいため)。
+export function buildCategoryTree(roots: string[], allCategories: string[]): CategoryNode[] {
+  function build(prefix: string[]): CategoryNode[] {
+    return childFolders(allCategories, prefix).map((name) => {
+      const path = [...prefix, name];
+      return { name, path, children: build(path) };
+    });
+  }
+
+  return [...new Set(roots)].sort().map((name) => ({
+    name,
+    path: [name],
+    children: build([name]),
+  }));
+}

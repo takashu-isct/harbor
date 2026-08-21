@@ -3,10 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
-  findGroupById,
-  findRoles,
+  findMinutesByGroup,
   hasAdminRole,
 } from "@/lib/sheet";
+import { canAccessCategory } from "@/lib/minutesCategory";
+import { MinutesLayout } from "@/components/MinutesLayout";
 
 export default async function MinutesPage({
   params,
@@ -25,48 +26,45 @@ export default async function MinutesPage({
     notFound();
   }
 
-  const [group, allRoles, isAdmin] = await Promise.all([
-    findGroupById(id),
-    findRoles(id),
-    hasAdminRole(id, affiliation.roles),
-  ]);
-
-  const folders = (
-    isAdmin ? allRoles.map((r) => r.name) : affiliation.roles
-  ).slice().sort();
+  const isAdmin = await hasAdminRole(id, affiliation.roles);
+  const allMinutes = await findMinutesByGroup(id);
+  const visible = allMinutes
+    .filter((m) => canAccessCategory(m.category, affiliation.roles, isAdmin))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-6 py-6">
-      <div>
-        <Link href={`/org/${id}`} className="text-sm text-muted underline">
-          ← {group?.name ?? id} に戻る
-        </Link>
-        <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>📝</span>
-          議事録
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          自分の持つロールのフォルダにだけ書き込めます。管理者はすべてのフォルダを見られます。
-        </p>
-      </div>
+    <MinutesLayout groupId={id} activePath={[]}>
+      <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+        <span aria-hidden>📝</span>
+        最近の議事録
+      </h1>
 
-      {folders.length === 0 ? (
-        <p className="text-sm text-muted">アクセスできるフォルダがありません。</p>
+      {visible.length === 0 ? (
+        <p className="text-sm text-muted">
+          左のフォルダから、議事録を書いてみましょう。
+        </p>
       ) : (
         <ul className="flex max-w-2xl flex-col gap-2">
-          {folders.map((f) => (
-            <li key={f}>
+          {visible.map((m) => (
+            <li key={m.id}>
               <Link
-                href={`/org/${id}/minutes/category/${encodeURIComponent(f)}`}
-                className="flex items-center gap-2 bg-surface px-4 py-3 text-sm text-foreground transition hover:brightness-110"
+                href={`/org/${id}/minutes/${m.id}`}
+                className="flex flex-col gap-1 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
               >
-                <span aria-hidden>📁</span>
-                {f}
+                <span className="text-xs text-muted">{m.category}</span>
+                <span className="flex flex-wrap items-center gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
+                    {m.authorName.slice(0, 1)}
+                  </span>
+                  <span className="text-muted">{m.meetingDate}</span>
+                  <span className="text-foreground">{m.title}</span>
+                  <span className="ml-auto text-xs text-muted">{m.authorName}</span>
+                </span>
               </Link>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </MinutesLayout>
   );
 }

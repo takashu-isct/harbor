@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { findActiveAffiliationsByEmail, hasAdminRole } from "@/lib/sheet";
 import { canAccessTop } from "@/lib/minutesCategory";
+import { MinutesLayout } from "@/components/MinutesLayout";
 import { MinutesBrowser } from "@/components/MinutesBrowser";
 
 export default async function MinutesCategoryPage({
@@ -28,8 +29,8 @@ export default async function MinutesCategoryPage({
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-6 px-6 py-6">
+    <MinutesLayout groupId={id} activePath={prefix}>
       <MinutesBrowser groupId={id} prefix={prefix} />
-    </div>
+    </MinutesLayout>
   );
 }
