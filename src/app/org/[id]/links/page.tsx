@@ -10,6 +10,16 @@ import {
   isAdminRole,
   removeLink,
 } from "@/lib/sheet";
+import { ConfirmButton } from "@/components/ConfirmButton";
+
+function isSafeHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 async function requireAdmin(id: string) {
   const session = await auth();
@@ -43,7 +53,8 @@ export default async function LinksPage({
     const label = String(formData.get("label") ?? "").trim();
     const url = String(formData.get("url") ?? "").trim();
     const iconUrl = String(formData.get("iconUrl") ?? "").trim();
-    if (!label || !url) return;
+    if (!label || !url || !isSafeHttpUrl(url)) return;
+    if (iconUrl && !isSafeHttpUrl(iconUrl)) return;
 
     await addLink({ ownerId: id, label, url, iconUrl, visibility: "団体" });
     revalidatePath(`/org/${id}/links`);
@@ -135,12 +146,12 @@ export default async function LinksPage({
                   <td className="py-2">
                     <form action={removeLinkAction}>
                       <input type="hidden" name="url" value={l.url} />
-                      <button
-                        type="submit"
+                      <ConfirmButton
+                        message={`「${l.label}」を削除します。よろしいですか?`}
                         className="rounded-none bg-danger/20 px-2 py-1 text-xs text-danger"
                       >
                         削除
-                      </button>
+                      </ConfirmButton>
                     </form>
                   </td>
                 </tr>

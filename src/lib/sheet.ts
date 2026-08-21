@@ -5,6 +5,14 @@ const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
 const HARBOR_ADMIN_GROUP_ID = "crew";
 const HARBOR_ADMIN_ROLE_NAME = "CREW開発部";
 
+// Google Sheets evaluates a cell written via USER_ENTERED as a formula when
+// it starts with =, +, -, or @. User-supplied free text (names, labels,
+// descriptions, etc.) must never reach the sheet unescaped, or a malicious
+// value like `=IMPORTXML(...)` could run when CREW staff open the sheet.
+function sanitizeCell(value: string): string {
+  return /^[=+\-@]/.test(value) ? `'${value}` : value;
+}
+
 function getSheetsClient() {
   const auth = new google.auth.JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -194,7 +202,7 @@ export async function addGroup(params: {
     range: "団体!A:D",
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [[params.id, params.name, params.status, params.foundedAt]],
+      values: [[params.id, sanitizeCell(params.name), params.status, params.foundedAt]],
     },
   });
 }
@@ -249,7 +257,9 @@ export async function addGroupMember(params: {
       range: "人!A:D",
       valueInputOption: "USER_ENTERED",
       requestBody: {
-        values: [[params.email, params.name, "", new Date().toISOString().slice(0, 10)]],
+        values: [
+          [params.email, sanitizeCell(params.name), "", new Date().toISOString().slice(0, 10)],
+        ],
       },
     });
   }
@@ -264,7 +274,15 @@ export async function addGroupMember(params: {
     range: "団体所属!A:E",
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [[params.email, params.groupId, params.role, params.permission, ""]],
+      values: [
+        [
+          params.email,
+          params.groupId,
+          sanitizeCell(params.role),
+          sanitizeCell(params.permission),
+          "",
+        ],
+      ],
     },
   });
 }
@@ -302,7 +320,7 @@ export async function updateGroupMemberPermission(params: {
     spreadsheetId: SHEET_ID,
     range: `団体所属!D${idx + 2}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[params.permission]] },
+    requestBody: { values: [[sanitizeCell(params.permission)]] },
   });
 }
 
@@ -346,7 +364,7 @@ export async function addRole(params: {
     range: "ロール!A:C",
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [[params.groupId, params.name, params.isAdmin ? "TRUE" : "FALSE"]],
+      values: [[params.groupId, sanitizeCell(params.name), params.isAdmin ? "TRUE" : "FALSE"]],
     },
   });
 }
@@ -440,11 +458,11 @@ export async function addApplication(params: {
         [
           params.groupId,
           params.email,
-          params.name,
-          params.desiredRole,
+          sanitizeCell(params.name),
+          sanitizeCell(params.desiredRole),
           "未処理",
           new Date().toISOString(),
-          params.newGroupName ?? "",
+          sanitizeCell(params.newGroupName ?? ""),
         ],
       ],
     },
@@ -516,7 +534,15 @@ export async function addLink(params: {
     range: "リンク!A:E",
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [[params.ownerId, params.label, params.url, params.iconUrl, params.visibility]],
+      values: [
+        [
+          params.ownerId,
+          sanitizeCell(params.label),
+          params.url,
+          params.iconUrl,
+          params.visibility,
+        ],
+      ],
     },
   });
 }
@@ -581,7 +607,7 @@ export async function addLedgerEntry(params: {
         [
           params.groupId,
           params.date,
-          params.description,
+          sanitizeCell(params.description),
           params.amount,
           params.type,
           params.recordedBy,

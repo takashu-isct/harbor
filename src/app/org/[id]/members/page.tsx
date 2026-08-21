@@ -15,6 +15,7 @@ import {
   removeGroupMember,
   updateGroupMemberPermission,
 } from "@/lib/sheet";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 async function requireAdmin(id: string) {
   const session = await auth();
@@ -73,6 +74,22 @@ export default async function MembersPage({
     const permission = String(formData.get("permission") ?? "");
     if (!email || !permission) return;
 
+    const currentRoles = await findRoles(id);
+    const adminRoleNames = new Set(
+      currentRoles.filter((r) => r.isAdmin).map((r) => r.name)
+    );
+    if (!adminRoleNames.has(permission)) {
+      const currentMembers = await findGroupMembers(id);
+      const target = currentMembers.find(
+        (m) => m.email.toLowerCase() === email.toLowerCase()
+      );
+      const wasAdmin = target && adminRoleNames.has(target.permission);
+      const adminCount = currentMembers.filter((m) =>
+        adminRoleNames.has(m.permission)
+      ).length;
+      if (wasAdmin && adminCount <= 1) return;
+    }
+
     await updateGroupMemberPermission({ groupId: id, email, permission });
     revalidatePath(`/org/${id}/members`);
   }
@@ -83,6 +100,20 @@ export default async function MembersPage({
 
     const email = String(formData.get("email") ?? "");
     if (!email) return;
+
+    const currentRoles = await findRoles(id);
+    const adminRoleNames = new Set(
+      currentRoles.filter((r) => r.isAdmin).map((r) => r.name)
+    );
+    const currentMembers = await findGroupMembers(id);
+    const target = currentMembers.find(
+      (m) => m.email.toLowerCase() === email.toLowerCase()
+    );
+    const isTargetAdmin = target && adminRoleNames.has(target.permission);
+    const adminCount = currentMembers.filter((m) =>
+      adminRoleNames.has(m.permission)
+    ).length;
+    if (isTargetAdmin && adminCount <= 1) return;
 
     await removeGroupMember(id, email);
     revalidatePath(`/org/${id}/members`);
@@ -182,6 +213,9 @@ export default async function MembersPage({
       )}
 
       <section>
+        <p className="mb-2 text-xs text-muted">
+          最後の1人の管理者は、降格・削除できません。
+        </p>
         <table className="w-full max-w-3xl text-left text-sm">
           <thead className="text-muted">
             <tr>
@@ -223,12 +257,12 @@ export default async function MembersPage({
                 <td className="py-2">
                   <form action={deleteMember}>
                     <input type="hidden" name="email" value={m.email} />
-                    <button
-                      type="submit"
+                    <ConfirmButton
+                      message={`${m.name || m.email}をこの団体から削除します。よろしいですか?`}
                       className="rounded-none bg-danger/20 px-2 py-1 text-xs text-danger"
                     >
                       削除
-                    </button>
+                    </ConfirmButton>
                   </form>
                 </td>
               </tr>

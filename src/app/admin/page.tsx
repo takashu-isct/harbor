@@ -40,6 +40,7 @@ export default async function HarborAdminPage() {
     const desiredRole = String(formData.get("desiredRole") ?? "").trim() || "代表";
     const submittedAt = String(formData.get("submittedAt") ?? "");
     if (!groupId || !email || !submittedAt) return;
+    if (!/^[a-z0-9-]+$/.test(groupId)) return;
 
     const existing = await findGroupById(groupId);
     if (existing) return;
@@ -123,7 +124,9 @@ export default async function HarborAdminPage() {
                     name="groupId"
                     type="text"
                     required
-                    placeholder="団体ID(半角英数字、例: tea-club)"
+                    pattern="[a-z0-9-]+"
+                    title="半角英小文字・数字・ハイフンのみ使えます"
+                    placeholder="団体ID(半角英小文字・数字・ハイフン、例: tea-club)"
                     className="rounded-none bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted"
                   />
                   <button

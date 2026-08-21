@@ -48,7 +48,7 @@ export default async function AccountingPage({
     const description = String(formData.get("description") ?? "").trim();
     const amount = Number(formData.get("amount") ?? 0);
     const type = formData.get("type") === "支出" ? "支出" : "収入";
-    if (!date || !description || !amount) return;
+    if (!date || !description || !(amount > 0)) return;
 
     await addLedgerEntry({
       groupId: id,
@@ -77,7 +77,11 @@ export default async function AccountingPage({
 
       <p className="text-sm text-muted">
         残高:{" "}
-        <span className="text-lg font-semibold text-foreground">
+        <span
+          className={`text-lg font-semibold ${
+            balance < 0 ? "text-danger" : "text-foreground"
+          }`}
+        >
           {balance.toLocaleString()}円
         </span>
       </p>
