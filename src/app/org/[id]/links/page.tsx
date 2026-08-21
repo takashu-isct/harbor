@@ -7,7 +7,7 @@ import {
   findActiveAffiliationsByEmail,
   findGroupById,
   findLinksByOwner,
-  isAdminRole,
+  hasAdminRole,
   removeLink,
 } from "@/lib/sheet";
 import { ConfirmButton } from "@/components/ConfirmButton";
@@ -28,7 +28,7 @@ async function requireAdmin(id: string) {
   }
   const affiliations = await findActiveAffiliationsByEmail(session.user.email);
   const affiliation = affiliations.find((a) => a.groupId === id);
-  if (!affiliation || !(await isAdminRole(id, affiliation.permission))) {
+  if (!affiliation || !(await hasAdminRole(id, affiliation.roles))) {
     notFound();
   }
 }

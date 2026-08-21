@@ -3,7 +3,7 @@ import { findActiveAffiliationsByEmail, findGroupById } from "@/lib/sheet";
 
 type Current =
   | { type: "personal" }
-  | { type: "org"; id: string; role: string; groupName: string };
+  | { type: "org"; id: string; roles: string[]; groupName: string };
 
 export async function LocationSwitcher({
   email,
@@ -23,7 +23,7 @@ export async function LocationSwitcher({
   const currentLabel =
     current.type === "personal"
       ? "個人"
-      : `${current.groupName}(${current.role})`;
+      : `${current.groupName}(${current.roles.join("・") || "所属"})`;
 
   return (
     <details className="group relative">
@@ -52,7 +52,8 @@ export async function LocationSwitcher({
                 : "text-foreground"
             }`}
           >
-            🏢 {group?.name ?? affiliation.groupId}({affiliation.role})
+            🏢 {group?.name ?? affiliation.groupId}
+            ({affiliation.roles.join("・") || "所属"})
           </Link>
         ))}
       </div>

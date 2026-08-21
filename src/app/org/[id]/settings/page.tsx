@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
   findGroupById,
-  isAdminRole,
+  hasAdminRole,
   updateGroupHiddenTools,
 } from "@/lib/sheet";
 import { ORG_TOOLS } from "@/lib/tools";
@@ -17,7 +17,7 @@ async function requireAdmin(id: string) {
   }
   const affiliations = await findActiveAffiliationsByEmail(session.user.email);
   const affiliation = affiliations.find((a) => a.groupId === id);
-  if (!affiliation || !(await isAdminRole(id, affiliation.permission))) {
+  if (!affiliation || !(await hasAdminRole(id, affiliation.roles))) {
     notFound();
   }
 }

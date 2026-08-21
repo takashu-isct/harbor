@@ -62,7 +62,7 @@ export type Person = {
   hiddenTools: string[];
 };
 
-function parseHiddenTools(cell: string | undefined): string[] {
+function parseCommaList(cell: string | undefined): string[] {
   return (cell ?? "")
     .split(",")
     .map((s) => s.trim())
@@ -83,7 +83,7 @@ export async function findPersonByEmail(email: string): Promise<Person | null> {
     name: row[1] ?? "",
     internalId: row[2] ?? "",
     registeredAt: row[3] ?? "",
-    hiddenTools: parseHiddenTools(row[4]),
+    hiddenTools: parseCommaList(row[4]),
   };
 }
 
@@ -107,8 +107,7 @@ export async function updatePersonHiddenTools(email: string, hidden: string[]): 
 export type Affiliation = {
   email: string;
   groupId: string;
-  role: string;
-  permission: string;
+  roles: string[];
   expiresAt: string;
 };
 
@@ -126,8 +125,7 @@ export async function findActiveAffiliationsByEmail(email: string): Promise<Affi
     .map((r) => ({
       email: r[0],
       groupId: r[1] ?? "",
-      role: r[2] ?? "",
-      permission: r[3] ?? "",
+      roles: parseCommaList(r[3]),
       expiresAt: r[4] ?? "",
     }));
 }
@@ -154,7 +152,7 @@ export async function findGroupById(id: string): Promise<Group | null> {
     name: row[1] ?? "",
     status: row[2] ?? "",
     foundedAt: row[3] ?? "",
-    hiddenTools: parseHiddenTools(row[4]),
+    hiddenTools: parseCommaList(row[4]),
   };
 }
 
@@ -169,7 +167,7 @@ export async function findAllGroups(): Promise<Group[]> {
     name: r[1] ?? "",
     status: r[2] ?? "",
     foundedAt: r[3] ?? "",
-    hiddenTools: parseHiddenTools(r[4]),
+    hiddenTools: parseCommaList(r[4]),
   }));
 }
 
@@ -210,15 +208,14 @@ export async function addGroup(params: {
 export async function isHarborAdmin(email: string): Promise<boolean> {
   const affiliations = await findActiveAffiliationsByEmail(email);
   return affiliations.some(
-    (a) => a.groupId === HARBOR_ADMIN_GROUP_ID && a.permission === HARBOR_ADMIN_ROLE_NAME
+    (a) => a.groupId === HARBOR_ADMIN_GROUP_ID && a.roles.includes(HARBOR_ADMIN_ROLE_NAME)
   );
 }
 
 export type GroupMember = {
   email: string;
   name: string;
-  role: string;
-  permission: string;
+  roles: string[];
   expiresAt: string;
 };
 
@@ -236,8 +233,7 @@ export async function findGroupMembers(groupId: string): Promise<GroupMember[]> 
     .map((r) => ({
       email: r[0],
       name: nameByEmail.get(r[0]?.trim().toLowerCase()) ?? "",
-      role: r[2] ?? "",
-      permission: r[3] ?? "",
+      roles: parseCommaList(r[3]),
       expiresAt: r[4] ?? "",
     }));
 }
@@ -246,8 +242,7 @@ export async function addGroupMember(params: {
   groupId: string;
   email: string;
   name: string;
-  role: string;
-  permission: string;
+  roles: string[];
 }): Promise<void> {
   const sheets = getSheetsClient();
   const existing = await findPersonByEmail(params.email);
@@ -278,8 +273,8 @@ export async function addGroupMember(params: {
         [
           params.email,
           params.groupId,
-          sanitizeCell(params.role),
-          sanitizeCell(params.permission),
+          "",
+          sanitizeCell(params.roles.join(",")),
           "",
         ],
       ],
@@ -301,10 +296,10 @@ export async function removeGroupMember(groupId: string, email: string): Promise
   await deleteSheetRow("団体所属", idx + 2);
 }
 
-export async function updateGroupMemberPermission(params: {
+export async function updateGroupMemberRoles(params: {
   groupId: string;
   email: string;
-  permission: string;
+  roles: string[];
 }): Promise<void> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
@@ -320,7 +315,7 @@ export async function updateGroupMemberPermission(params: {
     spreadsheetId: SHEET_ID,
     range: `団体所属!D${idx + 2}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[sanitizeCell(params.permission)]] },
+    requestBody: { values: [[sanitizeCell(params.roles.join(","))]] },
   });
 }
 
@@ -369,9 +364,56 @@ export async function addRole(params: {
   });
 }
 
-export async function isAdminRole(groupId: string, roleName: string): Promise<boolean> {
+export async function hasAdminRole(groupId: string, roleNames: string[]): Promise<boolean> {
   const roles = await findRoles(groupId);
-  return roles.some((r) => r.name === roleName && r.isAdmin);
+  const adminNames = new Set(roles.filter((r) => r.isAdmin).map((r) => r.name));
+  return roleNames.some((n) => adminNames.has(n));
+}
+
+export async function updateRole(params: {
+  groupId: string;
+  oldName: string;
+  newName: string;
+  isAdmin: boolean;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "ロール!A2:C",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex((r) => r[0] === params.groupId && r[1] === params.oldName);
+  if (idx === -1) return;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `ロール!A${idx + 2}:C${idx + 2}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[params.groupId, sanitizeCell(params.newName), params.isAdmin ? "TRUE" : "FALSE"]],
+    },
+  });
+
+  if (params.newName === params.oldName) return;
+
+  const affRes = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "団体所属!A2:E",
+  });
+  const affRows = affRes.data.values ?? [];
+  for (let i = 0; i < affRows.length; i++) {
+    const r = affRows[i];
+    if (r[1] !== params.groupId) continue;
+    const roles = parseCommaList(r[3]);
+    if (!roles.includes(params.oldName)) continue;
+    const newRoles = roles.map((name) => (name === params.oldName ? params.newName : name));
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SHEET_ID,
+      range: `団体所属!D${i + 2}`,
+      valueInputOption: "USER_ENTERED",
+      requestBody: { values: [[sanitizeCell(newRoles.join(","))]] },
+    });
+  }
 }
 
 export type Application = {

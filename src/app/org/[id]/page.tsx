@@ -7,7 +7,7 @@ import {
   findFoundingApplications,
   findGroupById,
   findLinksByOwner,
-  isAdminRole,
+  hasAdminRole,
   isHarborAdmin,
 } from "@/lib/sheet";
 import { ORG_TOOLS } from "@/lib/tools";
@@ -44,7 +44,7 @@ export default async function OrgHome({
     await Promise.all([
       findGroupById(id),
       findLinksByOwner(id),
-      isAdminRole(id, affiliation.permission),
+      hasAdminRole(id, affiliation.roles),
       isHarborAdmin(session.user.email),
       findApplicationsByGroup(id),
       findFoundingApplications(),
@@ -65,7 +65,7 @@ export default async function OrgHome({
           current={{
             type: "org",
             id,
-            role: affiliation.role,
+            roles: affiliation.roles,
             groupName: group?.name ?? id,
           }}
         />

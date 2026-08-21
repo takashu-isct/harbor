@@ -221,7 +221,8 @@ export default async function Home() {
               className="flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
             >
               <span aria-hidden>🏢</span>
-              {group?.name ?? affiliation.groupId}({affiliation.role})
+              {group?.name ?? affiliation.groupId}
+              ({affiliation.roles.join("・") || "所属"})
             </Link>
           </li>
         ))}

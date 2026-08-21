@@ -68,7 +68,7 @@ export default async function ProfileDetailPage() {
                   {group?.name ?? affiliation.groupId}
                 </Link>
                 <span className="ml-1 text-sm text-muted">
-                  ({affiliation.role})
+                  ({affiliation.roles.join("・") || "所属"})
                 </span>
               </li>
             ))}

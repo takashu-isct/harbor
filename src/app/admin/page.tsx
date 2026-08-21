@@ -37,7 +37,6 @@ export default async function HarborAdminPage() {
     const groupName = String(formData.get("newGroupName") ?? "");
     const email = String(formData.get("email") ?? "");
     const name = String(formData.get("name") ?? "");
-    const desiredRole = String(formData.get("desiredRole") ?? "").trim() || "代表";
     const submittedAt = String(formData.get("submittedAt") ?? "");
     if (!groupId || !email || !submittedAt) return;
     if (!/^[a-z0-9-]+$/.test(groupId)) return;
@@ -56,8 +55,7 @@ export default async function HarborAdminPage() {
       groupId,
       email,
       name,
-      role: desiredRole,
-      permission: "管理者",
+      roles: ["管理者"],
     });
     await decideApplication({ groupId: "", email, submittedAt, status: "承認" });
     revalidatePath("/admin");
