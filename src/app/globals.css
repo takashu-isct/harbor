@@ -11,6 +11,17 @@
   --success: #3fa96a;
 }
 
+:root[data-theme="light"] {
+  --background: #ffffff;
+  --surface: #eef1f5;
+  --foreground: #14202e;
+  --muted: #5b6b80;
+  --accent: #f97316;
+  --warning: #b45309;
+  --danger: #c0392b;
+  --success: #2f7d4f;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-surface: var(--surface);
