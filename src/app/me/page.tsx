@@ -112,6 +112,13 @@ export default async function ProfilePage() {
             個人参加のイベント
           </h2>
           <p className="text-sm text-muted">準備中です。</p>
+          <Link
+            href="/me/events/new"
+            className="mt-2 inline-flex items-center gap-2 text-sm text-foreground underline"
+          >
+            <span aria-hidden>🎉</span>
+            イベントを企画する
+          </Link>
         </section>
       </main>
     </div>

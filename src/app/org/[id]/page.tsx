@@ -109,6 +109,11 @@ export default async function OrgHome({
             <AppTile disabled icon="📁" label="Drive" />
             <AppTile disabled icon="📄" label="文書" />
             <AppTile disabled icon="📅" label="イベント" />
+            <AppTile
+              href={`/org/${id}/events/new`}
+              icon="🎉"
+              label="イベントを企画する"
+            />
             {isAdmin && (
               <AppTile
                 href={`/org/${id}/members`}

@@ -2,7 +2,7 @@
 
 学生団体の運営を1箇所にまとめるWebサービス。
 東京科学大学の学生団体 CREW が開発・運営する。
-公開予定URL: harbor.icct-crew.jp
+公開予定URL: harbor.isct-crew.jp
 
 ## 技術構成
 - Next.js (App Router) + TypeScript
