@@ -6,6 +6,7 @@ import {
   findGroupById,
   findLinksByOwner,
   isAdminRole,
+  isHarborAdmin,
 } from "@/lib/sheet";
 
 function AppTile({
@@ -70,10 +71,11 @@ export default async function OrgHome({
     notFound();
   }
 
-  const [group, links, isAdmin] = await Promise.all([
+  const [group, links, isAdmin, harborAdmin] = await Promise.all([
     findGroupById(id),
     findLinksByOwner(id),
     isAdminRole(id, affiliation.permission),
+    isHarborAdmin(session.user.email),
   ]);
 
   return (
@@ -123,6 +125,9 @@ export default async function OrgHome({
             )}
             {isAdmin && (
               <AppTile href={`/org/${id}/roles`} icon="🎭" label="ロール管理" />
+            )}
+            {harborAdmin && (
+              <AppTile href="/admin" icon="🛠️" label="Harbor管理" />
             )}
           </div>
         </section>

@@ -6,6 +6,7 @@ import {
   findApplicationsByEmail,
   findGroupById,
   findPersonByEmail,
+  isHarborAdmin,
 } from "@/lib/sheet";
 
 export default async function ProfilePage() {
@@ -14,10 +15,11 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
-  const [person, affiliations, applications] = await Promise.all([
+  const [person, affiliations, applications, harborAdmin] = await Promise.all([
     findPersonByEmail(session.user.email),
     findActiveAffiliationsByEmail(session.user.email),
     findApplicationsByEmail(session.user.email),
+    isHarborAdmin(session.user.email),
   ]);
 
   const groups = await Promise.all(
@@ -33,16 +35,23 @@ export default async function ProfilePage() {
         <p className="text-sm text-muted">
           今の立場: <span className="text-foreground">個人</span>
         </p>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        >
-          <button type="submit" className="text-sm text-muted underline">
-            ログアウト
-          </button>
-        </form>
+        <div className="flex items-center gap-4">
+          {harborAdmin && (
+            <Link href="/admin" className="text-sm text-accent underline">
+              🛠️ Harbor管理
+            </Link>
+          )}
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
+          >
+            <button type="submit" className="text-sm text-muted underline">
+              ログアウト
+            </button>
+          </form>
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col gap-8 px-6 py-6">

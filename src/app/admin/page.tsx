@@ -1,0 +1,170 @@
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { auth } from "@/auth";
+import {
+  addGroup,
+  addGroupMember,
+  decideApplication,
+  ensureDefaultRoles,
+  findFoundingApplications,
+  findGroupById,
+  isHarborAdmin,
+} from "@/lib/sheet";
+
+async function requireHarborAdmin() {
+  const session = await auth();
+  if (!session?.user?.email) {
+    redirect("/login");
+  }
+  if (!(await isHarborAdmin(session.user.email))) {
+    notFound();
+  }
+}
+
+export default async function HarborAdminPage() {
+  await requireHarborAdmin();
+
+  const applications = await findFoundingApplications();
+  const pending = applications.filter((a) => a.status === "未処理");
+  const decided = applications.filter((a) => a.status !== "未処理");
+
+  async function approveFounding(formData: FormData) {
+    "use server";
+    await requireHarborAdmin();
+
+    const groupId = String(formData.get("groupId") ?? "").trim();
+    const groupName = String(formData.get("newGroupName") ?? "");
+    const email = String(formData.get("email") ?? "");
+    const name = String(formData.get("name") ?? "");
+    const desiredRole = String(formData.get("desiredRole") ?? "").trim() || "代表";
+    const submittedAt = String(formData.get("submittedAt") ?? "");
+    if (!groupId || !email || !submittedAt) return;
+
+    const existing = await findGroupById(groupId);
+    if (existing) return;
+
+    await addGroup({
+      id: groupId,
+      name: groupName,
+      status: "活動中",
+      foundedAt: new Date().toISOString().slice(0, 10),
+    });
+    await ensureDefaultRoles(groupId);
+    await addGroupMember({
+      groupId,
+      email,
+      name,
+      role: desiredRole,
+      permission: "管理者",
+    });
+    await decideApplication({ groupId: "", email, submittedAt, status: "承認" });
+    revalidatePath("/admin");
+  }
+
+  async function rejectFounding(formData: FormData) {
+    "use server";
+    await requireHarborAdmin();
+
+    const email = String(formData.get("email") ?? "");
+    const submittedAt = String(formData.get("submittedAt") ?? "");
+    if (!email || !submittedAt) return;
+
+    await decideApplication({ groupId: "", email, submittedAt, status: "却下" });
+    revalidatePath("/admin");
+  }
+
+  return (
+    <div className="flex flex-1 flex-col gap-8 px-6 py-6">
+      <div>
+        <Link href="/me" className="text-sm text-muted underline">
+          ← プロフィールに戻る
+        </Link>
+        <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
+          <span aria-hidden>🛠️</span>
+          Harbor管理
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          団体の設立申請を確認し、承認できます。
+        </p>
+      </div>
+
+      <section>
+        <h2 className="mb-3 text-sm text-muted">
+          設立申請({pending.length}件)
+        </h2>
+        {pending.length === 0 ? (
+          <p className="text-sm text-muted">未処理の設立申請はありません。</p>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {pending.map((a, i) => (
+              <li
+                key={i}
+                className="flex flex-col gap-3 rounded-md bg-surface px-4 py-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="font-medium text-foreground">{a.newGroupName}</span>
+                  <span className="text-muted">
+                    {a.name || a.email} ({a.email})
+                  </span>
+                  <span className="text-muted">希望役職: {a.desiredRole || "-"}</span>
+                </div>
+                <form
+                  action={approveFounding}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <input type="hidden" name="newGroupName" value={a.newGroupName} />
+                  <input type="hidden" name="email" value={a.email} />
+                  <input type="hidden" name="name" value={a.name} />
+                  <input type="hidden" name="desiredRole" value={a.desiredRole} />
+                  <input type="hidden" name="submittedAt" value={a.submittedAt} />
+                  <input
+                    name="groupId"
+                    type="text"
+                    required
+                    placeholder="団体ID(半角英数字、例: tea-club)"
+                    className="rounded-md bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
+                  >
+                    承認して団体を作成
+                  </button>
+                </form>
+                <form action={rejectFounding}>
+                  <input type="hidden" name="email" value={a.email} />
+                  <input type="hidden" name="submittedAt" value={a.submittedAt} />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-danger/20 px-3 py-1.5 text-xs font-medium text-danger transition hover:brightness-110"
+                  >
+                    却下
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {decided.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm text-muted">処理済み</h2>
+          <ul className="flex flex-col gap-2 text-sm">
+            {decided.map((a, i) => (
+              <li
+                key={i}
+                className="flex flex-wrap items-center gap-3 rounded-md bg-surface/50 px-4 py-2"
+              >
+                <span className="text-foreground">{a.newGroupName}</span>
+                <span className="text-muted">{a.email}</span>
+                <span className="ml-auto text-muted">{a.status}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  );
+}

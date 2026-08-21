@@ -2,6 +2,9 @@ import { google } from "googleapis";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
 
+const HARBOR_ADMIN_GROUP_ID = "crew";
+const HARBOR_ADMIN_ROLE_NAME = "CREW開発部";
+
 function getSheetsClient() {
   const auth = new google.auth.JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -121,6 +124,30 @@ export async function findAllGroups(): Promise<Group[]> {
     status: r[2] ?? "",
     foundedAt: r[3] ?? "",
   }));
+}
+
+export async function addGroup(params: {
+  id: string;
+  name: string;
+  status: string;
+  foundedAt: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "団体!A:D",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[params.id, params.name, params.status, params.foundedAt]],
+    },
+  });
+}
+
+export async function isHarborAdmin(email: string): Promise<boolean> {
+  const affiliations = await findActiveAffiliationsByEmail(email);
+  return affiliations.some(
+    (a) => a.groupId === HARBOR_ADMIN_GROUP_ID && a.permission === HARBOR_ADMIN_ROLE_NAME
+  );
 }
 
 export type GroupMember = {
@@ -293,6 +320,25 @@ export async function findApplicationsByGroup(groupId: string): Promise<Applicat
     .filter((r) => r[0] === groupId)
     .map((r) => ({
       groupId: r[0],
+      email: r[1] ?? "",
+      name: r[2] ?? "",
+      desiredRole: r[3] ?? "",
+      status: (r[4] === "承認" || r[4] === "却下" ? r[4] : "未処理") as Application["status"],
+      submittedAt: r[5] ?? "",
+      newGroupName: r[6] ?? "",
+    }));
+}
+
+export async function findFoundingApplications(): Promise<Application[]> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "申請!A2:G",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => !r[0])
+    .map((r) => ({
+      groupId: r[0] ?? "",
       email: r[1] ?? "",
       name: r[2] ?? "",
       desiredRole: r[3] ?? "",
