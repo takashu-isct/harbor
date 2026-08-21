@@ -4,6 +4,7 @@ import { auth, signOut } from "@/auth";
 import { findPersonByEmail, isHarborAdmin } from "@/lib/sheet";
 import { PERSONAL_TOOLS } from "@/lib/tools";
 import { AppTile } from "@/components/AppTile";
+import { LocationSwitcher } from "@/components/LocationSwitcher";
 
 export default async function PersonalHome() {
   const session = await auth();
@@ -22,9 +23,7 @@ export default async function PersonalHome() {
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-surface px-6 py-4">
-        <p className="text-sm text-muted">
-          今の立場: <span className="text-foreground">個人</span>
-        </p>
+        <LocationSwitcher email={session.user.email} current={{ type: "personal" }} />
         <div className="flex items-center gap-4">
           {harborAdmin && (
             <Link href="/admin" className="text-sm text-accent underline">

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import {
@@ -10,6 +9,7 @@ import {
 } from "@/lib/sheet";
 import { ORG_TOOLS } from "@/lib/tools";
 import { AddTile, AppTile } from "@/components/AppTile";
+import { LocationSwitcher } from "@/components/LocationSwitcher";
 
 function faviconFor(url: string): string | undefined {
   try {
@@ -50,15 +50,16 @@ export default async function OrgHome({
   return (
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-surface px-6 py-4">
-        <p className="text-sm text-muted">
-          今の立場:{" "}
-          <span className="text-foreground">{group?.name ?? id}</span>
-          <span className="ml-1">({affiliation.role})</span>
-        </p>
+        <LocationSwitcher
+          email={session.user.email}
+          current={{
+            type: "org",
+            id,
+            role: affiliation.role,
+            groupName: group?.name ?? id,
+          }}
+        />
         <div className="flex items-center gap-4">
-          <Link href="/me" className="text-sm text-muted underline">
-            プロフィール
-          </Link>
           <form
             action={async () => {
               "use server";
