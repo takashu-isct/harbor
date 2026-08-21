@@ -5,7 +5,9 @@ import {
   findActiveAffiliationsByEmail,
   findGroupById,
   findMinuteById,
+  hasAdminRole,
 } from "@/lib/sheet";
+import { canAccessCategory, splitCategory } from "@/lib/minutesCategory";
 
 export default async function MinuteDetailPage({
   params,
@@ -32,18 +34,28 @@ export default async function MinuteDetailPage({
     notFound();
   }
 
+  const isAdmin = await hasAdminRole(id, affiliation.roles);
+  if (!canAccessCategory(minute.category, affiliation.roles, isAdmin)) {
+    notFound();
+  }
+
+  const categoryPath = splitCategory(minute.category);
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <Link href={`/org/${id}/minutes`} className="text-sm text-muted underline">
-          ← {group?.name ?? id} の議事録一覧に戻る
+        <Link
+          href={`/org/${id}/minutes/category/${categoryPath.map(encodeURIComponent).join("/")}`}
+          className="text-sm text-muted underline"
+        >
+          ← {minute.category} に戻る
         </Link>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
           <span aria-hidden>📝</span>
           {minute.title}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          {minute.meetingDate} ・ {minute.authorName}
+          {minute.meetingDate} ・ {minute.authorName} ・ {group?.name ?? id}
         </p>
       </div>
 

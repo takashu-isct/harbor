@@ -7,13 +7,17 @@ import {
   findGroupById,
   findPersonByEmail,
 } from "@/lib/sheet";
+import { canAccessTop, joinCategory, splitCategory } from "@/lib/minutesCategory";
 
 export default async function NewMinutePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ category?: string }>;
 }) {
   const { id } = await params;
+  const { category } = await searchParams;
   const session = await auth();
   if (!session?.user?.email) {
     redirect("/login");
@@ -24,9 +28,18 @@ export default async function NewMinutePage({
   if (!affiliation) {
     notFound();
   }
+  if (affiliation.roles.length === 0) {
+    notFound();
+  }
 
   const group = await findGroupById(id);
   const today = new Date().toISOString().slice(0, 10);
+
+  const prefillSegs = category ? splitCategory(category) : [];
+  const defaultRole = prefillSegs[0] && affiliation.roles.includes(prefillSegs[0])
+    ? prefillSegs[0]
+    : affiliation.roles[0];
+  const defaultSubPath = joinCategory(prefillSegs.slice(1));
 
   async function createMinute(formData: FormData) {
     "use server";
@@ -34,7 +47,14 @@ export default async function NewMinutePage({
     if (!session?.user?.email) return;
 
     const affiliations = await findActiveAffiliationsByEmail(session.user.email);
-    if (!affiliations.some((a) => a.groupId === id)) return;
+    const affiliation = affiliations.find((a) => a.groupId === id);
+    if (!affiliation) return;
+
+    const role = String(formData.get("role") ?? "");
+    if (!canAccessTop(role, affiliation.roles, false)) return;
+
+    const subPath = String(formData.get("subPath") ?? "").trim();
+    const categoryPath = joinCategory([role, ...splitCategory(subPath)]);
 
     const title = String(formData.get("title") ?? "").trim();
     const meetingDate = String(formData.get("meetingDate") ?? "");
@@ -48,8 +68,9 @@ export default async function NewMinutePage({
       meetingDate,
       content,
       authorName: person?.name || session.user.email,
+      category: categoryPath,
     });
-    redirect(`/org/${id}/minutes`);
+    redirect(`/org/${id}/minutes/category/${categoryPath.split("/").map(encodeURIComponent).join("/")}`);
   }
 
   return (
@@ -65,6 +86,27 @@ export default async function NewMinutePage({
       </div>
 
       <form action={createMinute} className="flex max-w-2xl flex-col gap-3">
+        <label className="flex flex-col gap-1 text-sm text-muted">
+          フォルダ(ロール)
+          <select
+            name="role"
+            defaultValue={defaultRole}
+            className="rounded-none bg-surface px-3 py-2 text-sm text-foreground"
+          >
+            {affiliation.roles.map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </label>
+        <input
+          name="subPath"
+          type="text"
+          defaultValue={defaultSubPath}
+          placeholder="サブフォルダ(任意、例: 月次報告/2026-08)"
+          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+        />
         <input
           name="title"
           type="text"

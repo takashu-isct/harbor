@@ -668,13 +668,14 @@ export type MeetingMinutes = {
   content: string;
   authorName: string;
   createdAt: string;
+  category: string;
 };
 
 export async function findMinutesByGroup(groupId: string): Promise<MeetingMinutes[]> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "議事録!A2:G",
+    range: "議事録!A2:H",
   });
   return (res.data.values ?? [])
     .filter((r) => r[1] === groupId)
@@ -686,6 +687,7 @@ export async function findMinutesByGroup(groupId: string): Promise<MeetingMinute
       content: r[4] ?? "",
       authorName: r[5] ?? "",
       createdAt: r[6] ?? "",
+      category: r[7] ?? "",
     }))
     .sort((a, b) => (a.meetingDate < b.meetingDate ? 1 : a.meetingDate > b.meetingDate ? -1 : 0));
 }
@@ -704,6 +706,7 @@ export async function addMinute(params: {
   meetingDate: string;
   content: string;
   authorName: string;
+  category: string;
 }): Promise<void> {
   const sheets = getSheetsClient();
   const id =
@@ -712,7 +715,7 @@ export async function addMinute(params: {
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: "議事録!A:G",
+    range: "議事録!A:H",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -724,6 +727,7 @@ export async function addMinute(params: {
           sanitizeCell(params.content),
           sanitizeCell(params.authorName),
           new Date().toISOString(),
+          sanitizeCell(params.category),
         ],
       ],
     },

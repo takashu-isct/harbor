@@ -4,7 +4,8 @@ import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
   findGroupById,
-  findMinutesByGroup,
+  findRoles,
+  hasAdminRole,
 } from "@/lib/sheet";
 
 export default async function MinutesPage({
@@ -24,10 +25,15 @@ export default async function MinutesPage({
     notFound();
   }
 
-  const [group, minutes] = await Promise.all([
+  const [group, allRoles, isAdmin] = await Promise.all([
     findGroupById(id),
-    findMinutesByGroup(id),
+    findRoles(id),
+    hasAdminRole(id, affiliation.roles),
   ]);
+
+  const folders = (
+    isAdmin ? allRoles.map((r) => r.name) : affiliation.roles
+  ).slice().sort();
 
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
@@ -35,33 +41,27 @@ export default async function MinutesPage({
         <Link href={`/org/${id}`} className="text-sm text-muted underline">
           ← {group?.name ?? id} に戻る
         </Link>
-        <div className="mt-2 flex items-center justify-between">
-          <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-            <span aria-hidden>📝</span>
-            議事録
-          </h1>
-          <Link
-            href={`/org/${id}/minutes/new`}
-            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            議事録を書く
-          </Link>
-        </div>
+        <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
+          <span aria-hidden>📝</span>
+          議事録
+        </h1>
+        <p className="mt-1 text-sm text-muted">
+          自分の持つロールのフォルダにだけ書き込めます。管理者はすべてのフォルダを見られます。
+        </p>
       </div>
 
-      {minutes.length === 0 ? (
-        <p className="text-sm text-muted">まだ議事録がありません。</p>
+      {folders.length === 0 ? (
+        <p className="text-sm text-muted">アクセスできるフォルダがありません。</p>
       ) : (
         <ul className="flex max-w-2xl flex-col gap-2">
-          {minutes.map((m) => (
-            <li key={m.id}>
+          {folders.map((f) => (
+            <li key={f}>
               <Link
-                href={`/org/${id}/minutes/${m.id}`}
-                className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+                href={`/org/${id}/minutes/category/${encodeURIComponent(f)}`}
+                className="flex items-center gap-2 bg-surface px-4 py-3 text-sm text-foreground transition hover:brightness-110"
               >
-                <span className="text-muted">{m.meetingDate}</span>
-                <span className="text-foreground">{m.title}</span>
-                <span className="ml-auto text-xs text-muted">{m.authorName}</span>
+                <span aria-hidden>📁</span>
+                {f}
               </Link>
             </li>
           ))}
