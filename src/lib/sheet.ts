@@ -280,13 +280,14 @@ export type Application = {
   desiredRole: string;
   status: "未処理" | "承認" | "却下";
   submittedAt: string;
+  newGroupName: string;
 };
 
 export async function findApplicationsByGroup(groupId: string): Promise<Application[]> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "申請!A2:F",
+    range: "申請!A2:G",
   });
   return (res.data.values ?? [])
     .filter((r) => r[0] === groupId)
@@ -297,6 +298,7 @@ export async function findApplicationsByGroup(groupId: string): Promise<Applicat
       desiredRole: r[3] ?? "",
       status: (r[4] === "承認" || r[4] === "却下" ? r[4] : "未処理") as Application["status"],
       submittedAt: r[5] ?? "",
+      newGroupName: r[6] ?? "",
     }));
 }
 
@@ -304,7 +306,7 @@ export async function findApplicationsByEmail(email: string): Promise<Applicatio
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "申請!A2:F",
+    range: "申請!A2:G",
   });
   return (res.data.values ?? [])
     .filter((r) => r[1]?.trim().toLowerCase() === email.toLowerCase())
@@ -315,6 +317,7 @@ export async function findApplicationsByEmail(email: string): Promise<Applicatio
       desiredRole: r[3] ?? "",
       status: (r[4] === "承認" || r[4] === "却下" ? r[4] : "未処理") as Application["status"],
       submittedAt: r[5] ?? "",
+      newGroupName: r[6] ?? "",
     }));
 }
 
@@ -323,15 +326,24 @@ export async function addApplication(params: {
   email: string;
   name: string;
   desiredRole: string;
+  newGroupName?: string;
 }): Promise<void> {
   const sheets = getSheetsClient();
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: "申請!A:F",
+    range: "申請!A:G",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
-        [params.groupId, params.email, params.name, params.desiredRole, "未処理", new Date().toISOString()],
+        [
+          params.groupId,
+          params.email,
+          params.name,
+          params.desiredRole,
+          "未処理",
+          new Date().toISOString(),
+          params.newGroupName ?? "",
+        ],
       ],
     },
   });
@@ -346,7 +358,7 @@ export async function decideApplication(params: {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "申請!A2:F",
+    range: "申請!A2:G",
   });
   const rows = res.data.values ?? [];
   const idx = rows.findIndex(

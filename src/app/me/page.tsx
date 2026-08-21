@@ -98,7 +98,9 @@ export default async function ProfilePage() {
             <ul className="flex flex-col gap-1 text-sm">
               {applications.map((a, i) => (
                 <li key={i} className="flex max-w-md justify-between">
-                  <span className="text-foreground">{a.groupId}</span>
+                  <span className="text-foreground">
+                    {a.groupId ? a.groupId : `${a.newGroupName}(新規設立)`}
+                  </span>
                   <span className="text-muted">{a.status}</span>
                 </li>
               ))}

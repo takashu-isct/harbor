@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { signIn } from "@/auth";
 
 export default async function LoginPage({
@@ -35,6 +36,14 @@ export default async function LoginPage({
           Googleでログイン
         </button>
       </form>
+
+      <p className="text-xs text-muted">
+        ログインすると
+        <Link href="/terms" className="underline">
+          利用規約
+        </Link>
+        に同意したものとみなします。
+      </p>
     </div>
   );
 }

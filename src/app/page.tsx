@@ -56,12 +56,30 @@ async function ApplicationGate({
     revalidatePath("/");
   }
 
+  async function submitFoundingRequest(formData: FormData) {
+    "use server";
+    const session = await auth();
+    if (!session?.user?.email) return;
+
+    const newGroupName = String(formData.get("newGroupName") ?? "").trim();
+    if (!newGroupName) return;
+
+    await addApplication({
+      groupId: "",
+      email: session.user.email,
+      name: session.user.name ?? "",
+      desiredRole: "代表",
+      newGroupName,
+    });
+    revalidatePath("/");
+  }
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
       <p className="text-sm text-muted">{email} でログイン中</p>
       <p className="max-w-sm text-foreground">
-        まだHarborに登録されていません。所属したい団体に申請できます。
-        管理者が承認すると使えるようになります。
+        まだHarborに登録されていません。所属したい団体に申請するか、
+        新しい団体の立ち上げを申請できます。承認されると使えるようになります。
       </p>
 
       {applications.length > 0 && (
@@ -70,7 +88,7 @@ async function ApplicationGate({
           <ul className="flex flex-col gap-1 text-sm">
             {applications.map((a, i) => (
               <li key={i} className="flex justify-between text-foreground">
-                <span>{a.groupId}</span>
+                <span>{a.groupId ? a.groupId : `${a.newGroupName}(新規設立)`}</span>
                 <span className="text-muted">{a.status}</span>
               </li>
             ))}
@@ -80,8 +98,9 @@ async function ApplicationGate({
 
       <form
         action={submitApplication}
-        className="flex w-full max-w-sm flex-col gap-3"
+        className="flex w-full max-w-sm flex-col gap-3 rounded-md bg-surface/40 p-4"
       >
+        <h2 className="text-left text-sm text-muted">すでにある団体に参加を申請する</h2>
         <select
           name="groupId"
           required
@@ -114,6 +133,29 @@ async function ApplicationGate({
           className="rounded-md bg-accent px-6 py-3 text-sm font-medium text-white transition hover:brightness-110"
         >
           申請する
+        </button>
+      </form>
+
+      <form
+        action={submitFoundingRequest}
+        className="flex w-full max-w-sm flex-col gap-3 rounded-md bg-surface/40 p-4"
+      >
+        <h2 className="text-left text-sm text-muted">新しい団体を立ち上げる</h2>
+        <input
+          name="newGroupName"
+          type="text"
+          placeholder="団体名"
+          required
+          className="rounded-md bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+        />
+        <p className="text-left text-xs text-muted">
+          開発部が内容を確認のうえ、団体を作成します。少しお時間をいただく場合があります。
+        </p>
+        <button
+          type="submit"
+          className="rounded-md bg-surface px-6 py-3 text-sm font-medium text-foreground transition hover:brightness-110"
+        >
+          設立を申請する
         </button>
       </form>
 
