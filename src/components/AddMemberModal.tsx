@@ -11,6 +11,10 @@ export function AddMemberModal({
 }) {
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  // 「メンバー」ロールが無い団体では、管理者権限ではない先頭のロールを既定でチェックする
+  // (何もチェックされないまま追加され、権限0のメンバーができてしまうのを防ぐ)。
+  const defaultRoleName =
+    roles.find((r) => r.name === "メンバー")?.name ?? roles.find((r) => !r.isAdmin)?.name;
 
   async function handleSubmit(formData: FormData) {
     await action(formData);
@@ -70,7 +74,7 @@ export function AddMemberModal({
                       type="checkbox"
                       name="roles"
                       value={r.name}
-                      defaultChecked={r.name === "メンバー"}
+                      defaultChecked={r.name === defaultRoleName}
                     />
                     {r.name}
                     {r.isAdmin && <span className="text-xs">(管理者権限)</span>}

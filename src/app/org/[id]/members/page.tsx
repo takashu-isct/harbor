@@ -48,6 +48,10 @@ export default async function MembersPage({
   ]);
 
   const pendingApplications = applications.filter((a) => a.status === "未処理");
+  // 「メンバー」ロールが無い団体では、管理者権限ではない先頭のロールを既定でチェックする
+  // (何もチェックされないまま追加・承認され、権限0のメンバーができてしまうのを防ぐ)。
+  const defaultRoleName =
+    roles.find((r) => r.name === "メンバー")?.name ?? roles.find((r) => !r.isAdmin)?.name;
 
   async function addMember(formData: FormData) {
     "use server";
@@ -196,20 +200,26 @@ export default async function MembersPage({
                   <input type="hidden" name="email" value={a.email} />
                   <input type="hidden" name="name" value={a.name} />
                   <input type="hidden" name="submittedAt" value={a.submittedAt} />
-                  {roles.map((r) => (
-                    <label
-                      key={r.name}
-                      className="flex items-center gap-1 text-xs text-muted"
-                    >
-                      <input
-                        type="checkbox"
-                        name="roles"
-                        value={r.name}
-                        defaultChecked={r.name === "メンバー"}
-                      />
-                      {r.name}
-                    </label>
-                  ))}
+                  {roles.map((r) => {
+                    const desiredMatches = roles.some((x) => x.name === a.desiredRole);
+                    const checked = desiredMatches
+                      ? r.name === a.desiredRole
+                      : r.name === defaultRoleName;
+                    return (
+                      <label
+                        key={r.name}
+                        className="flex items-center gap-1 text-xs text-muted"
+                      >
+                        <input
+                          type="checkbox"
+                          name="roles"
+                          value={r.name}
+                          defaultChecked={checked}
+                        />
+                        {r.name}
+                      </label>
+                    );
+                  })}
                   <button
                     type="submit"
                     className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
