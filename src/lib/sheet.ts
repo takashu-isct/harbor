@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { google } from "googleapis";
 
 const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
@@ -69,7 +70,7 @@ function parseCommaList(cell: string | undefined): string[] {
     .filter(Boolean);
 }
 
-export async function findPersonByEmail(email: string): Promise<Person | null> {
+export const findPersonByEmail = cache(async (email: string): Promise<Person | null> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -85,7 +86,7 @@ export async function findPersonByEmail(email: string): Promise<Person | null> {
     registeredAt: row[3] ?? "",
     hiddenTools: parseCommaList(row[4]),
   };
-}
+});
 
 export async function updatePersonHiddenTools(email: string, hidden: string[]): Promise<void> {
   const sheets = getSheetsClient();
@@ -111,7 +112,7 @@ export type Affiliation = {
   expiresAt: string;
 };
 
-export async function findActiveAffiliationsByEmail(email: string): Promise<Affiliation[]> {
+export const findActiveAffiliationsByEmail = cache(async (email: string): Promise<Affiliation[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -128,7 +129,7 @@ export async function findActiveAffiliationsByEmail(email: string): Promise<Affi
       roles: parseCommaList(r[3]),
       expiresAt: r[4] ?? "",
     }));
-}
+});
 
 export type Group = {
   id: string;
@@ -138,7 +139,7 @@ export type Group = {
   hiddenTools: string[];
 };
 
-export async function findGroupById(id: string): Promise<Group | null> {
+export const findGroupById = cache(async (id: string): Promise<Group | null> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -154,9 +155,9 @@ export async function findGroupById(id: string): Promise<Group | null> {
     foundedAt: row[3] ?? "",
     hiddenTools: parseCommaList(row[4]),
   };
-}
+});
 
-export async function findAllGroups(): Promise<Group[]> {
+export const findAllGroups = cache(async (): Promise<Group[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -169,7 +170,7 @@ export async function findAllGroups(): Promise<Group[]> {
     foundedAt: r[3] ?? "",
     hiddenTools: parseCommaList(r[4]),
   }));
-}
+});
 
 export async function updateGroupHiddenTools(groupId: string, hidden: string[]): Promise<void> {
   const sheets = getSheetsClient();
@@ -205,12 +206,12 @@ export async function addGroup(params: {
   });
 }
 
-export async function isHarborAdmin(email: string): Promise<boolean> {
+export const isHarborAdmin = cache(async (email: string): Promise<boolean> => {
   const affiliations = await findActiveAffiliationsByEmail(email);
   return affiliations.some(
     (a) => a.groupId === HARBOR_ADMIN_GROUP_ID && a.roles.includes(HARBOR_ADMIN_ROLE_NAME)
   );
-}
+});
 
 export type GroupMember = {
   email: string;
@@ -219,7 +220,7 @@ export type GroupMember = {
   expiresAt: string;
 };
 
-export async function findGroupMembers(groupId: string): Promise<GroupMember[]> {
+export const findGroupMembers = cache(async (groupId: string): Promise<GroupMember[]> => {
   const sheets = getSheetsClient();
   const [affRes, peopleRes] = await Promise.all([
     sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: "団体所属!A2:E" }),
@@ -236,7 +237,7 @@ export async function findGroupMembers(groupId: string): Promise<GroupMember[]> 
       roles: parseCommaList(r[3]),
       expiresAt: r[4] ?? "",
     }));
-}
+});
 
 export async function addGroupMember(params: {
   groupId: string;
@@ -325,7 +326,7 @@ export type Role = {
   isAdmin: boolean;
 };
 
-export async function findRoles(groupId: string): Promise<Role[]> {
+export const findRoles = cache(async (groupId: string): Promise<Role[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -338,14 +339,18 @@ export async function findRoles(groupId: string): Promise<Role[]> {
       name: r[1] ?? "",
       isAdmin: String(r[2]).toUpperCase() === "TRUE",
     }));
-}
+});
 
 export async function ensureDefaultRoles(groupId: string): Promise<Role[]> {
   const roles = await findRoles(groupId);
   if (roles.length > 0) return roles;
-  await addRole({ groupId, name: "管理者", isAdmin: true });
-  await addRole({ groupId, name: "メンバー", isAdmin: false });
-  return findRoles(groupId);
+  const defaults: Role[] = [
+    { groupId, name: "管理者", isAdmin: true },
+    { groupId, name: "メンバー", isAdmin: false },
+  ];
+  await addRole(defaults[0]);
+  await addRole(defaults[1]);
+  return defaults;
 }
 
 export async function addRole(params: {
@@ -364,11 +369,11 @@ export async function addRole(params: {
   });
 }
 
-export async function hasAdminRole(groupId: string, roleNames: string[]): Promise<boolean> {
+export const hasAdminRole = cache(async (groupId: string, roleNames: string[]): Promise<boolean> => {
   const roles = await findRoles(groupId);
   const adminNames = new Set(roles.filter((r) => r.isAdmin).map((r) => r.name));
   return roleNames.some((n) => adminNames.has(n));
-}
+});
 
 export async function updateRole(params: {
   groupId: string;
@@ -426,7 +431,7 @@ export type Application = {
   newGroupName: string;
 };
 
-export async function findApplicationsByGroup(groupId: string): Promise<Application[]> {
+export const findApplicationsByGroup = cache(async (groupId: string): Promise<Application[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -443,9 +448,9 @@ export async function findApplicationsByGroup(groupId: string): Promise<Applicat
       submittedAt: r[5] ?? "",
       newGroupName: r[6] ?? "",
     }));
-}
+});
 
-export async function findFoundingApplications(): Promise<Application[]> {
+export const findFoundingApplications = cache(async (): Promise<Application[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -462,9 +467,9 @@ export async function findFoundingApplications(): Promise<Application[]> {
       submittedAt: r[5] ?? "",
       newGroupName: r[6] ?? "",
     }));
-}
+});
 
-export async function findApplicationsByEmail(email: string): Promise<Application[]> {
+export const findApplicationsByEmail = cache(async (email: string): Promise<Application[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -481,7 +486,7 @@ export async function findApplicationsByEmail(email: string): Promise<Applicatio
       submittedAt: r[5] ?? "",
       newGroupName: r[6] ?? "",
     }));
-}
+});
 
 export async function addApplication(params: {
   groupId: string;
@@ -546,7 +551,7 @@ export type LinkItem = {
   visibility: string;
 };
 
-export async function findLinksByOwner(ownerId: string): Promise<LinkItem[]> {
+export const findLinksByOwner = cache(async (ownerId: string): Promise<LinkItem[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -561,7 +566,7 @@ export async function findLinksByOwner(ownerId: string): Promise<LinkItem[]> {
       iconUrl: r[3] ?? "",
       visibility: r[4] ?? "",
     }));
-}
+});
 
 export async function addLink(params: {
   ownerId: string;
@@ -611,7 +616,7 @@ export type LedgerEntry = {
   recordedAt: string;
 };
 
-export async function findLedgerEntries(groupId: string): Promise<LedgerEntry[]> {
+export const findLedgerEntries = cache(async (groupId: string): Promise<LedgerEntry[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -629,7 +634,7 @@ export async function findLedgerEntries(groupId: string): Promise<LedgerEntry[]>
       recordedAt: r[6] ?? "",
     }))
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-}
+});
 
 export async function addLedgerEntry(params: {
   groupId: string;
@@ -673,7 +678,7 @@ export type OrgDocument = {
   isFolder: boolean;
 };
 
-export async function findDocumentsByGroup(groupId: string): Promise<OrgDocument[]> {
+export const findDocumentsByGroup = cache(async (groupId: string): Promise<OrgDocument[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
@@ -693,15 +698,14 @@ export async function findDocumentsByGroup(groupId: string): Promise<OrgDocument
       isFolder: r[3] === "folder",
     }))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
-}
+});
 
-export async function findDocumentById(
-  groupId: string,
-  id: string
-): Promise<OrgDocument | null> {
-  const all = await findDocumentsByGroup(groupId);
-  return all.find((m) => m.id === id) ?? null;
-}
+export const findDocumentById = cache(
+  async (groupId: string, id: string): Promise<OrgDocument | null> => {
+    const all = await findDocumentsByGroup(groupId);
+    return all.find((m) => m.id === id) ?? null;
+  }
+);
 
 export async function addDocument(params: {
   groupId: string;
