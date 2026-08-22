@@ -61,6 +61,7 @@ export type Person = {
   internalId: string;
   registeredAt: string;
   hiddenTools: string[];
+  toolOrder: string[];
 };
 
 function parseCommaList(cell: string | undefined): string[] {
@@ -74,7 +75,7 @@ export const findPersonByEmail = cache(async (email: string): Promise<Person | n
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "人!A2:E",
+    range: "人!A2:F",
   });
   const rows = res.data.values ?? [];
   const row = rows.find((r) => r[0]?.trim().toLowerCase() === email.toLowerCase());
@@ -85,23 +86,27 @@ export const findPersonByEmail = cache(async (email: string): Promise<Person | n
     internalId: row[2] ?? "",
     registeredAt: row[3] ?? "",
     hiddenTools: parseCommaList(row[4]),
+    toolOrder: parseCommaList(row[5]),
   };
 });
 
-export async function updatePersonHiddenTools(email: string, hidden: string[]): Promise<void> {
+export async function updatePersonToolSettings(
+  email: string,
+  settings: { hidden: string[]; order: string[] }
+): Promise<void> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "人!A2:E",
+    range: "人!A2:F",
   });
   const rows = res.data.values ?? [];
   const idx = rows.findIndex((r) => r[0]?.trim().toLowerCase() === email.toLowerCase());
   if (idx === -1) return;
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range: `人!E${idx + 2}`,
+    range: `人!E${idx + 2}:F${idx + 2}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[hidden.join(",")]] },
+    requestBody: { values: [[settings.hidden.join(","), settings.order.join(",")]] },
   });
 }
 
@@ -137,13 +142,14 @@ export type Group = {
   status: string;
   foundedAt: string;
   hiddenTools: string[];
+  toolOrder: string[];
 };
 
 export const findGroupById = cache(async (id: string): Promise<Group | null> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "団体!A2:E",
+    range: "団体!A2:F",
   });
   const rows = res.data.values ?? [];
   const row = rows.find((r) => r[0] === id);
@@ -154,6 +160,7 @@ export const findGroupById = cache(async (id: string): Promise<Group | null> => 
     status: row[2] ?? "",
     foundedAt: row[3] ?? "",
     hiddenTools: parseCommaList(row[4]),
+    toolOrder: parseCommaList(row[5]),
   };
 });
 
@@ -161,7 +168,7 @@ export const findAllGroups = cache(async (): Promise<Group[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "団体!A2:E",
+    range: "団体!A2:F",
   });
   return (res.data.values ?? []).map((r) => ({
     id: r[0],
@@ -169,23 +176,27 @@ export const findAllGroups = cache(async (): Promise<Group[]> => {
     status: r[2] ?? "",
     foundedAt: r[3] ?? "",
     hiddenTools: parseCommaList(r[4]),
+    toolOrder: parseCommaList(r[5]),
   }));
 });
 
-export async function updateGroupHiddenTools(groupId: string, hidden: string[]): Promise<void> {
+export async function updateGroupToolSettings(
+  groupId: string,
+  settings: { hidden: string[]; order: string[] }
+): Promise<void> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "団体!A2:E",
+    range: "団体!A2:F",
   });
   const rows = res.data.values ?? [];
   const idx = rows.findIndex((r) => r[0] === groupId);
   if (idx === -1) return;
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID,
-    range: `団体!E${idx + 2}`,
+    range: `団体!E${idx + 2}:F${idx + 2}`,
     valueInputOption: "USER_ENTERED",
-    requestBody: { values: [[hidden.join(",")]] },
+    requestBody: { values: [[settings.hidden.join(","), settings.order.join(",")]] },
   });
 }
 

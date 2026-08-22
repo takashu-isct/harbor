@@ -92,7 +92,7 @@ export async function DocumentsLayout({
   return (
     <div className="flex flex-1 flex-col md:flex-row">
       <aside className="w-full shrink-0 border-b border-surface px-4 py-6 md:w-64 md:border-b-0 md:border-r">
-        <BackLink href={`/org/${groupId}`}>{group?.name ?? groupId}</BackLink>
+        <BackLink href={`/org/${groupId}`}>{group?.name ?? groupId}団体画面</BackLink>
         <h2 className="mb-2 mt-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <FileText className="h-4 w-4" aria-hidden />
           文書管理

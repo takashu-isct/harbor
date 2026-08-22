@@ -3,10 +3,11 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { Moon, Settings, Sun } from "lucide-react";
 import { auth } from "@/auth";
-import { findPersonByEmail, updatePersonHiddenTools } from "@/lib/sheet";
-import { PERSONAL_TOOLS } from "@/lib/tools";
+import { findPersonByEmail, updatePersonToolSettings } from "@/lib/sheet";
+import { orderTools, PERSONAL_TOOLS } from "@/lib/tools";
 import { BackLink } from "@/components/BackLink";
 import { SubmitButton } from "@/components/SubmitButton";
+import { ToolOrderEditor } from "@/components/ToolOrderEditor";
 import { btnPrimary } from "@/lib/styles";
 
 export default async function PersonalSettingsPage() {
@@ -20,6 +21,7 @@ export default async function PersonalSettingsPage() {
     cookies(),
   ]);
   const hidden = person?.hiddenTools ?? [];
+  const tools = orderTools(PERSONAL_TOOLS, person?.toolOrder ?? []);
   const currentTheme = cookieStore.get("theme")?.value === "light" ? "light" : "dark";
 
   async function saveTheme(formData: FormData) {
@@ -40,7 +42,8 @@ export default async function PersonalSettingsPage() {
     const newHidden = PERSONAL_TOOLS.filter(
       (t) => formData.get(t.id) !== "on"
     ).map((t) => t.id);
-    await updatePersonHiddenTools(session.user.email, newHidden);
+    const newOrder = formData.getAll("order").map(String);
+    await updatePersonToolSettings(session.user.email, { hidden: newHidden, order: newOrder });
     revalidatePath("/me");
     redirect("/me");
   }
@@ -87,21 +90,15 @@ export default async function PersonalSettingsPage() {
 
       <section>
         <h2 className="mb-3 text-sm text-muted">表示するツール</h2>
-        <form action={save} className="flex max-w-md flex-col gap-3">
-          {PERSONAL_TOOLS.map((t) => (
-            <label
-              key={t.id}
-              className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground transition-colors duration-150 hover:brightness-110"
-            >
-              <input
-                type="checkbox"
-                name={t.id}
-                defaultChecked={!hidden.includes(t.id)}
-              />
-              <t.icon className="h-4 w-4" aria-hidden />
-              {t.label}
-            </label>
-          ))}
+        <form action={save} className="flex flex-col gap-3">
+          <ToolOrderEditor
+            items={tools.map((t) => ({
+              id: t.id,
+              label: t.label,
+              icon: <t.icon className="h-4 w-4" aria-hidden />,
+              defaultChecked: !hidden.includes(t.id),
+            }))}
+          />
           <SubmitButton className={`self-start ${btnPrimary}`}>保存</SubmitButton>
         </form>
       </section>

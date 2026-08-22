@@ -12,7 +12,7 @@ export default async function NewPersonalEventPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <BackLink href="/me">プロフィールに戻る</BackLink>
+        <BackLink href="/me/events">イベント</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
           <PartyPopper className="h-5 w-5" aria-hidden />
           イベントを企画する

@@ -79,7 +79,7 @@ export default async function LinksPage({
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <BackLink href={`/org/${id}`}>{group?.name ?? id} に戻る</BackLink>
+        <BackLink href={`/org/${id}`}>{group?.name ?? id}団体画面</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
           <Link2 className="h-5 w-5" aria-hidden />
           外部リンクを追加

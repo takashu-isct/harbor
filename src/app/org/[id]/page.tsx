@@ -11,7 +11,7 @@ import {
   hasAdminRole,
   isHarborAdmin,
 } from "@/lib/sheet";
-import { ORG_TOOLS } from "@/lib/tools";
+import { ORG_TOOLS, orderTools } from "@/lib/tools";
 import { AddTile, AppTile } from "@/components/AppTile";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
 import { linkMuted, linkMutedXs } from "@/lib/styles";
@@ -53,11 +53,14 @@ export default async function OrgHome({
     ]);
 
   const hiddenTools = group?.hiddenTools ?? [];
-  const visibleTools = ORG_TOOLS.filter((t) => !hiddenTools.includes(t.id));
+  const visibleTools = orderTools(ORG_TOOLS, group?.toolOrder ?? []).filter(
+    (t) => !hiddenTools.includes(t.id)
+  );
   const pendingCount = applications.filter((a) => a.status === "未処理").length;
   const foundingPendingCount = foundingApplications.filter(
     (a) => a.status === "未処理"
   ).length;
+  const showAdminSection = isAdmin || harborAdmin;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -106,27 +109,35 @@ export default async function OrgHome({
                 label={t.label}
               />
             ))}
-            {isAdmin && (
-              <AppTile
-                href={`/org/${id}/members`}
-                icon={Users}
-                label="メンバー管理"
-                badge={pendingCount || undefined}
-              />
-            )}
-            {isAdmin && (
-              <AppTile href={`/org/${id}/roles`} icon={UserCog} label="ロール管理" />
-            )}
-            {harborAdmin && (
-              <AppTile
-                href="/admin"
-                icon={Wrench}
-                label="Harbor管理"
-                badge={foundingPendingCount || undefined}
-              />
-            )}
           </div>
         </section>
+
+        {showAdminSection && (
+          <section>
+            <h2 className="mb-3 text-sm text-muted">CREW Harbor(管理者画面)</h2>
+            <div className="flex flex-wrap gap-4">
+              {isAdmin && (
+                <AppTile
+                  href={`/org/${id}/members`}
+                  icon={Users}
+                  label="メンバー管理"
+                  badge={pendingCount || undefined}
+                />
+              )}
+              {isAdmin && (
+                <AppTile href={`/org/${id}/roles`} icon={UserCog} label="ロール管理" />
+              )}
+              {harborAdmin && (
+                <AppTile
+                  href="/admin"
+                  icon={Wrench}
+                  label="Harbor管理"
+                  badge={foundingPendingCount || undefined}
+                />
+              )}
+            </div>
+          </section>
+        )}
 
         <section>
           <div className="mb-3 flex items-center justify-between">

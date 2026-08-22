@@ -155,7 +155,7 @@ export default async function MembersPage({
     <UnsavedChangesProvider>
     <div className="flex flex-1 flex-col gap-8 px-6 py-6">
       <div>
-        <BackLink href={`/org/${id}`}>{group?.name ?? id} に戻る</BackLink>
+        <BackLink href={`/org/${id}`}>{group?.name ?? id}団体画面</BackLink>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <Users className="h-5 w-5" aria-hidden />

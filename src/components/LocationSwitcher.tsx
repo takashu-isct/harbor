@@ -21,10 +21,7 @@ export async function LocationSwitcher({
     }))
   );
 
-  const currentLabel =
-    current.type === "personal"
-      ? "個人"
-      : `${current.groupName}(${current.roles.join("・") || "所属"})`;
+  const currentLabel = current.type === "personal" ? "個人" : current.groupName;
 
   return (
     <details className="group relative">

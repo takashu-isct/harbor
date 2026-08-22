@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Settings, Wrench } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { findFoundingApplications, findPersonByEmail, isHarborAdmin } from "@/lib/sheet";
-import { PERSONAL_TOOLS } from "@/lib/tools";
+import { orderTools, PERSONAL_TOOLS } from "@/lib/tools";
 import { AppTile } from "@/components/AppTile";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
 import { linkMuted, linkMutedXs } from "@/lib/styles";
@@ -21,7 +21,9 @@ export default async function PersonalHome() {
   ]);
 
   const hiddenTools = person?.hiddenTools ?? [];
-  const visibleTools = PERSONAL_TOOLS.filter((t) => !hiddenTools.includes(t.id));
+  const visibleTools = orderTools(PERSONAL_TOOLS, person?.toolOrder ?? []).filter(
+    (t) => !hiddenTools.includes(t.id)
+  );
   const foundingPendingCount = foundingApplications.filter(
     (a) => a.status === "未処理"
   ).length;

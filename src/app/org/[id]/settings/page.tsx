@@ -6,11 +6,12 @@ import {
   findActiveAffiliationsByEmail,
   findGroupById,
   hasAdminRole,
-  updateGroupHiddenTools,
+  updateGroupToolSettings,
 } from "@/lib/sheet";
-import { ORG_TOOLS } from "@/lib/tools";
+import { ORG_TOOLS, orderTools } from "@/lib/tools";
 import { BackLink } from "@/components/BackLink";
 import { SubmitButton } from "@/components/SubmitButton";
+import { ToolOrderEditor } from "@/components/ToolOrderEditor";
 import { btnPrimary } from "@/lib/styles";
 
 async function requireAdmin(id: string) {
@@ -35,6 +36,7 @@ export default async function OrgSettingsPage({
 
   const group = await findGroupById(id);
   const hidden = group?.hiddenTools ?? [];
+  const tools = orderTools(ORG_TOOLS, group?.toolOrder ?? []);
 
   async function save(formData: FormData) {
     "use server";
@@ -43,7 +45,8 @@ export default async function OrgSettingsPage({
     const newHidden = ORG_TOOLS.filter((t) => formData.get(t.id) !== "on").map(
       (t) => t.id
     );
-    await updateGroupHiddenTools(id, newHidden);
+    const newOrder = formData.getAll("order").map(String);
+    await updateGroupToolSettings(id, { hidden: newHidden, order: newOrder });
     revalidatePath(`/org/${id}`);
     redirect(`/org/${id}`);
   }
@@ -51,7 +54,7 @@ export default async function OrgSettingsPage({
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <BackLink href={`/org/${id}`}>{group?.name ?? id} に戻る</BackLink>
+        <BackLink href={`/org/${id}`}>{group?.name ?? id}団体画面</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
           <Settings className="h-5 w-5" aria-hidden />
           表示設定
@@ -61,21 +64,15 @@ export default async function OrgSettingsPage({
         </p>
       </div>
 
-      <form action={save} className="flex max-w-md flex-col gap-3">
-        {ORG_TOOLS.map((t) => (
-          <label
-            key={t.id}
-            className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground transition-colors duration-150 hover:brightness-110"
-          >
-            <input
-              type="checkbox"
-              name={t.id}
-              defaultChecked={!hidden.includes(t.id)}
-            />
-            <t.icon className="h-4 w-4" aria-hidden />
-            {t.label}
-          </label>
-        ))}
+      <form action={save} className="flex flex-col gap-3">
+        <ToolOrderEditor
+          items={tools.map((t) => ({
+            id: t.id,
+            label: t.label,
+            icon: <t.icon className="h-4 w-4" aria-hidden />,
+            defaultChecked: !hidden.includes(t.id),
+          }))}
+        />
         <SubmitButton className={`self-start ${btnPrimary}`}>保存</SubmitButton>
       </form>
     </div>
