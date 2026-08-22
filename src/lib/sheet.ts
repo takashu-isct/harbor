@@ -606,6 +606,55 @@ export async function removeLink(ownerId: string, url: string): Promise<void> {
   await deleteSheetRow("リンク", idx + 2);
 }
 
+export type CloudLink = {
+  groupId: string;
+  label: string;
+  url: string;
+};
+
+export const findCloudLinksByGroup = cache(async (groupId: string): Promise<CloudLink[]> => {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "クラウド!A2:C",
+  });
+  return (res.data.values ?? [])
+    .filter((r) => r[0] === groupId)
+    .map((r) => ({
+      groupId: r[0],
+      label: r[1] ?? "",
+      url: r[2] ?? "",
+    }));
+});
+
+export async function addCloudLink(params: {
+  groupId: string;
+  label: string;
+  url: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "クラウド!A:C",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[params.groupId, sanitizeCell(params.label), params.url]],
+    },
+  });
+}
+
+export async function removeCloudLink(groupId: string, url: string): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "クラウド!A2:C",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex((r) => r[0] === groupId && r[2] === url);
+  if (idx === -1) return;
+  await deleteSheetRow("クラウド", idx + 2);
+}
+
 export type LedgerEntry = {
   groupId: string;
   date: string;

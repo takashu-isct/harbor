@@ -8,7 +8,7 @@ export type ToolTile = {
 
 export const ORG_TOOLS: ToolTile[] = [
   { id: "accounting", icon: "💰", label: "会計", href: (id) => `/org/${id}/accounting` },
-  { id: "drive", icon: "📁", label: "Drive", disabled: true },
+  { id: "drive", icon: "📁", label: "Drive", href: (id) => `/org/${id}/drive` },
   { id: "documents", icon: "📝", label: "文書管理", href: (id) => `/org/${id}/documents` },
   { id: "events", icon: "📅", label: "イベント", disabled: true },
   { id: "events-new", icon: "🎉", label: "イベントを企画する", href: (id) => `/org/${id}/events/new` },
