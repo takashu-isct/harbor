@@ -8,7 +8,7 @@ import {
   findDocumentById,
   hasAdminRole,
 } from "@/lib/sheet";
-import { canAccessCategory, splitCategory, timeAgo } from "@/lib/documentCategory";
+import { canAccessCategory, canAccessTop, splitCategory, timeAgo } from "@/lib/documentCategory";
 import { DocumentsLayout } from "@/components/DocumentsLayout";
 import { proseClass } from "@/lib/markdownProse";
 
@@ -40,26 +40,37 @@ export default async function DocumentDetailPage({
   }
 
   const categoryPath = splitCategory(doc.category);
+  const canWrite = canAccessTop(categoryPath[0] ?? "", affiliation.roles, false);
 
   return (
     <DocumentsLayout groupId={id} activePath={categoryPath}>
-      <div>
-        <Link
-          href={`/org/${id}/documents/category/${categoryPath.map(encodeURIComponent).join("/")}`}
-          className="text-sm text-muted underline"
-        >
-          ← {doc.category}
-        </Link>
-        <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>📄</span>
-          {doc.title}
-        </h1>
-        <p className="mt-1 flex items-center gap-2 text-sm text-muted">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
-            {doc.authorName.slice(0, 1)}
-          </span>
-          {doc.authorName} ・ {timeAgo(doc.createdAt)}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <Link
+            href={`/org/${id}/documents/category/${categoryPath.map(encodeURIComponent).join("/")}`}
+            className="text-sm text-muted underline"
+          >
+            ← {doc.category}
+          </Link>
+          <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
+            <span aria-hidden>📄</span>
+            {doc.title}
+          </h1>
+          <p className="mt-1 flex items-center gap-2 text-sm text-muted">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
+              {doc.authorName.slice(0, 1)}
+            </span>
+            {doc.authorName} ・ {timeAgo(doc.createdAt)}
+          </p>
+        </div>
+        {canWrite && (
+          <Link
+            href={`/org/${id}/documents/${documentId}/edit`}
+            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          >
+            ✏️ 編集
+          </Link>
+        )}
       </div>
 
       <div className={`max-w-2xl bg-surface px-4 py-4 text-sm text-foreground ${proseClass}`}>

@@ -740,6 +740,31 @@ export async function addDocument(params: {
   });
 }
 
+export async function updateDocument(params: {
+  groupId: string;
+  id: string;
+  title: string;
+  content: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID,
+    range: "文書!A2:H",
+  });
+  const rows = res.data.values ?? [];
+  const idx = rows.findIndex((r) => r[0] === params.id && r[1] === params.groupId);
+  if (idx === -1) return;
+  const type = rows[idx][3] ?? "";
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `文書!C${idx + 2}:E${idx + 2}`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [[sanitizeCell(params.title), type, sanitizeCell(params.content)]],
+    },
+  });
+}
+
 // 文書0件の空フォルダを作るための目印行を追加する。
 export async function addFolder(params: {
   groupId: string;

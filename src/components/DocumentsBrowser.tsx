@@ -7,9 +7,11 @@ import { childFolders, joinCategory, splitCategory, timeAgo } from "@/lib/docume
 export async function DocumentsBrowser({
   groupId,
   prefix,
+  canWrite,
 }: {
   groupId: string;
   prefix: string[];
+  canWrite: boolean;
 }) {
   const allDocuments = await findDocumentsByGroup(groupId);
   const folders = childFolders(
@@ -80,10 +82,13 @@ export async function DocumentsBrowser({
             </li>
           ))}
           {documents.map((m) => (
-            <li key={m.id}>
+            <li
+              key={m.id}
+              className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+            >
               <Link
                 href={`/org/${groupId}/documents/${m.id}`}
-                className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+                className="flex flex-1 flex-wrap items-center gap-3"
               >
                 <span aria-hidden>📄</span>
                 <span className="text-foreground">{m.title}</span>
@@ -94,6 +99,14 @@ export async function DocumentsBrowser({
                   {m.authorName} ・ {timeAgo(m.createdAt)}
                 </span>
               </Link>
+              {canWrite && (
+                <Link
+                  href={`/org/${groupId}/documents/${m.id}/edit`}
+                  className="shrink-0 text-xs text-muted underline hover:text-foreground"
+                >
+                  ✏️ 編集
+                </Link>
+              )}
             </li>
           ))}
         </ul>

@@ -27,10 +27,11 @@ export default async function DocumentsCategoryPage({
   if (!canAccessTop(prefix[0] ?? "", affiliation.roles, isAdmin)) {
     notFound();
   }
+  const canWrite = canAccessTop(prefix[0] ?? "", affiliation.roles, false);
 
   return (
     <DocumentsLayout groupId={id} activePath={prefix}>
-      <DocumentsBrowser groupId={id} prefix={prefix} />
+      <DocumentsBrowser groupId={id} prefix={prefix} canWrite={canWrite} />
     </DocumentsLayout>
   );
 }

@@ -6,7 +6,7 @@ import {
   findDocumentsByGroup,
   hasAdminRole,
 } from "@/lib/sheet";
-import { canAccessCategory, timeAgo } from "@/lib/documentCategory";
+import { canAccessCategory, canAccessTop, splitCategory, timeAgo } from "@/lib/documentCategory";
 import { DocumentsLayout } from "@/components/DocumentsLayout";
 
 export default async function DocumentsPage({
@@ -55,26 +55,41 @@ export default async function DocumentsPage({
         </p>
       ) : (
         <ul className="flex max-w-2xl flex-col gap-2">
-          {visible.map((m) => (
-            <li key={m.id}>
-              <Link
-                href={`/org/${id}/documents/${m.id}`}
-                className="flex flex-col gap-1 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+          {visible.map((m) => {
+            const canWrite = canAccessTop(
+              splitCategory(m.category)[0] ?? "",
+              affiliation.roles,
+              false
+            );
+            return (
+              <li
+                key={m.id}
+                className="flex items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
               >
-                <span className="text-xs text-muted">{m.category}</span>
-                <span className="flex flex-wrap items-center gap-3">
-                  <span aria-hidden>📄</span>
-                  <span className="text-foreground">{m.title}</span>
-                  <span className="ml-auto flex items-center gap-2 text-xs text-muted">
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
-                      {m.authorName.slice(0, 1)}
+                <Link href={`/org/${id}/documents/${m.id}`} className="flex flex-1 flex-col gap-1">
+                  <span className="text-xs text-muted">{m.category}</span>
+                  <span className="flex flex-wrap items-center gap-3">
+                    <span aria-hidden>📄</span>
+                    <span className="text-foreground">{m.title}</span>
+                    <span className="ml-auto flex items-center gap-2 text-xs text-muted">
+                      <span className="flex h-5 w-5 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
+                        {m.authorName.slice(0, 1)}
+                      </span>
+                      {m.authorName} ・ {timeAgo(m.createdAt)}
                     </span>
-                    {m.authorName} ・ {timeAgo(m.createdAt)}
                   </span>
-                </span>
-              </Link>
-            </li>
-          ))}
+                </Link>
+                {canWrite && (
+                  <Link
+                    href={`/org/${id}/documents/${m.id}/edit`}
+                    className="shrink-0 text-xs text-muted underline hover:text-foreground"
+                  >
+                    ✏️ 編集
+                  </Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </DocumentsLayout>
