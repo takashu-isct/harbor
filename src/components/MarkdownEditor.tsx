@@ -4,6 +4,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { proseClass } from "@/lib/markdownProse";
+import { useUnsavedChangesGuard } from "./UnsavedChangesGuard";
 
 export function MarkdownEditor({
   name,
@@ -12,7 +13,9 @@ export function MarkdownEditor({
   name: string;
   defaultValue?: string;
 }) {
-  const [value, setValue] = useState(defaultValue ?? "");
+  const initial = defaultValue ?? "";
+  const [value, setValue] = useState(initial);
+  useUnsavedChangesGuard("document-content", value !== initial);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1">

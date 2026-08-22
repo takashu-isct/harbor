@@ -1,9 +1,11 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { findActiveAffiliationsByEmail, findDocumentById, updateDocument } from "@/lib/sheet";
 import { canAccessTop, splitCategory } from "@/lib/documentCategory";
 import { DocumentsLayout } from "@/components/DocumentsLayout";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
+import { UnsavedChangesProvider } from "@/components/UnsavedChangesGuard";
 
 export default async function EditDocumentPage({
   params,
@@ -56,34 +58,41 @@ export default async function EditDocumentPage({
   }
 
   return (
-    <DocumentsLayout groupId={id} activePath={categoryPath}>
-      <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-        <span aria-hidden>✏️</span>
-        文書を編集
-        <span className="text-sm font-normal text-muted">({doc.category})</span>
-      </h1>
+    <UnsavedChangesProvider>
+      <DocumentsLayout groupId={id} activePath={categoryPath}>
+        <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <span aria-hidden>✏️</span>
+          文書を編集
+          <span className="text-sm font-normal text-muted">({doc.category})</span>
+        </h1>
 
-      <form action={saveDocument} className="flex min-h-0 flex-1 flex-col gap-3">
-        <label className="flex max-w-md flex-col gap-1 text-sm text-muted">
-          タイトル
-          <input
-            name="title"
-            type="text"
-            defaultValue={doc.title}
-            required
-            className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
-          />
-        </label>
+        <form action={saveDocument} className="flex min-h-0 flex-1 flex-col gap-3">
+          <label className="flex max-w-md flex-col gap-1 text-sm text-muted">
+            タイトル
+            <input
+              name="title"
+              type="text"
+              defaultValue={doc.title}
+              required
+              className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
+            />
+          </label>
 
-        <MarkdownEditor name="content" defaultValue={doc.content} />
+          <MarkdownEditor name="content" defaultValue={doc.content} />
 
-        <button
-          type="submit"
-          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-        >
-          保存
-        </button>
-      </form>
-    </DocumentsLayout>
+          <div className="flex shrink-0 items-center gap-3">
+            <button
+              type="submit"
+              className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+            >
+              保存
+            </button>
+            <Link href={`/org/${id}/documents/${documentId}`} className="text-sm text-muted underline">
+              キャンセル
+            </Link>
+          </div>
+        </form>
+      </DocumentsLayout>
+    </UnsavedChangesProvider>
   );
 }

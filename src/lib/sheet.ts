@@ -713,7 +713,7 @@ export async function addDocument(params: {
   content: string;
   authorName: string;
   category: string;
-}): Promise<void> {
+}): Promise<string> {
   const sheets = getSheetsClient();
   const id =
     typeof crypto.randomUUID === "function"
@@ -738,6 +738,7 @@ export async function addDocument(params: {
       ],
     },
   });
+  return id;
 }
 
 export async function updateDocument(params: {

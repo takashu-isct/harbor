@@ -10,6 +10,7 @@ import {
 import { canAccessTop, joinCategory, splitCategory } from "@/lib/documentCategory";
 import { DocumentsLayout } from "@/components/DocumentsLayout";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
+import { UnsavedChangesProvider } from "@/components/UnsavedChangesGuard";
 
 export default async function NewDocumentPage({
   params,
@@ -92,26 +93,30 @@ export default async function NewDocumentPage({
 
     if (kind === "folder") {
       await addFolder({ groupId: id, category: categoryPath, authorName });
+      redirect(
+        `/org/${id}/documents/category/${categoryPath
+          .split("/")
+          .map(encodeURIComponent)
+          .join("/")}`
+      );
     } else {
       const content = String(formData.get("content") ?? "").trim();
       if (!title || !content) return;
-      await addDocument({ groupId: id, title, content, authorName, category: categoryPath });
+      const newId = await addDocument({ groupId: id, title, content, authorName, category: categoryPath });
+      redirect(`/org/${id}/documents/${newId}`);
     }
-
-    redirect(
-      `/org/${id}/documents/category/${categoryPath
-        .split("/")
-        .map(encodeURIComponent)
-        .join("/")}`
-    );
   }
 
   const activePath = fixedSegs ?? (prefillSegs.length > 0 ? prefillSegs : [defaultRole]);
   const kindSwitchBase = fixedSegs
     ? ""
     : `?${new URLSearchParams(category ? { category } : {}).toString()}`;
+  const cancelHref = fixedSegs
+    ? `/org/${id}/documents/category/${fixedSegs.map(encodeURIComponent).join("/")}`
+    : `/org/${id}/documents`;
 
   return (
+    <UnsavedChangesProvider>
     <DocumentsLayout groupId={id} activePath={activePath}>
       <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
         <span aria-hidden>{kind === "folder" ? "📁" : "📝"}</span>
@@ -190,6 +195,9 @@ export default async function NewDocumentPage({
               required
               className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
             />
+            <span className="text-xs text-muted">
+              「/」区切りで、さらに下の階層のフォルダーもまとめて作れます。
+            </span>
           </label>
         )}
 
@@ -208,13 +216,19 @@ export default async function NewDocumentPage({
 
         {kind === "document" && <MarkdownEditor name="content" />}
 
-        <button
-          type="submit"
-          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-        >
-          保存
-        </button>
+        <div className="flex shrink-0 items-center gap-3">
+          <button
+            type="submit"
+            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          >
+            保存
+          </button>
+          <Link href={cancelHref} className="text-sm text-muted underline">
+            キャンセル
+          </Link>
+        </div>
       </form>
     </DocumentsLayout>
+    </UnsavedChangesProvider>
   );
 }
