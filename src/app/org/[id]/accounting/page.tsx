@@ -10,7 +10,7 @@ import {
 } from "@/lib/sheet";
 import { BackLink } from "@/components/BackLink";
 import { SubmitButton } from "@/components/SubmitButton";
-import { btnPrimary } from "@/lib/styles";
+import { btnPrimary, linkMuted } from "@/lib/styles";
 
 export default async function AccountingPage({
   params,
@@ -70,10 +70,15 @@ export default async function AccountingPage({
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
         <BackLink href={`/org/${id}`}>{group?.name ?? id}団体画面</BackLink>
-        <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <Wallet className="h-5 w-5" aria-hidden />
-          会計
-        </h1>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
+            <Wallet className="h-5 w-5" aria-hidden />
+            会計
+          </h1>
+          <a href={`/org/${id}/accounting/csv`} className={linkMuted}>
+            CSVダウンロード
+          </a>
+        </div>
       </div>
 
       <p className="text-sm text-muted">
