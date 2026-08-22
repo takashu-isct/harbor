@@ -1,17 +1,13 @@
 /**
  * Harbor連携版 Googleドライブ権限自動反映スクリプト
  * ---------------------------------------------------
- * 元になった「アクセス権管理」スプレッドシートの仕組み(理想のアクセス権一覧を作り、
- * 現状のDriveの権限と突き合わせて差分だけ変更する)をそのまま使い、
- * 「誰がどのロールを持っているか」「どのフォルダーをどのロールに見せるか」の
- * 参照先だけを、CREW HarborのスプレッドシートのGoogleシート(団体所属・人・クラウド)に
- * 差し替えたものです。
+ * 「あるべき権限一覧」をCREW Harborのスプレッドシート(団体所属・人・クラウド)から作り、
+ * 現状のGoogleドライブの権限と突き合わせて、差分だけを反映する仕組みです。
  *
- * このスクリプトは、今までお使いだった「アクセス権管理」スプレッドシートに
- * 貼り付けて使うことを想定しています(アクセス権一覧・アクセス状況・権限変更・ログの
- * 4枚のシートは、このスプレッドシート側にこれまで通り作られます)。
- * 「アクセス権管理」「GoogleID管理」の2枚のシートは、もう参照しません
- * (Harbor側の団体所属・クラウドシートに一本化されるため)。
+ * このスクリプトは、新しく空のGoogleスプレッドシートを1つ用意して、
+ * そこに貼り付けて使うことを想定しています。作業用のシート(アクセス権一覧・
+ * アクセス状況・権限変更・ログ)は、初めて各機能を実行したときに自動で作られるので、
+ * 事前にシートを手作業で用意する必要はありません。
  *
  * ▼ 導入手順は、このファイルの一番下のコメントに書いてあります。
  */
@@ -48,6 +44,19 @@ function onOpen() {
     .addItem('毎晩自動実行を有効にする', 'installNightlyTrigger')
     .addItem('毎晩自動実行を停止する', 'removeNightlyTrigger')
     .addToUi();
+}
+
+/**
+ * 指定した名前のシートがまだ無ければ、見出し付きで新しく作る。
+ * 既にある場合はそのまま返す(中身は消さない)。
+ */
+function ensureSheet_(ss, name, headers) {
+  let sheet = ss.getSheetByName(name);
+  if (!sheet) {
+    sheet = ss.insertSheet(name);
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
+  return sheet;
 }
 
 // ===========================================================================
@@ -172,11 +181,7 @@ function extractFolderId_(url) {
  */
 function createIdealAccessListFromHarbor() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const outputSheet = ss.getSheetByName('アクセス権一覧');
-  if (!outputSheet) {
-    console.error('「アクセス権一覧」シートが見つかりません。');
-    return;
-  }
+  const outputSheet = ensureSheet_(ss, 'アクセス権一覧', ['氏名', 'GoogleID', 'フォルダー名', 'フォルダーID', '権限', '付与理由']);
 
   const rosterByGroup = getHarborRoster_();
   const rules = getHarborCloudRules_();
@@ -225,13 +230,8 @@ function getCurrentAccessStatus() {
   const TIME_LIMIT = 5 * 60 * 1000; // 5分
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const outputSheet = ss.getSheetByName('アクセス状況');
+  const outputSheet = ensureSheet_(ss, 'アクセス状況', ['氏名', 'GoogleID', 'フォルダー名', 'フォルダーID', '権限', '区分']);
   const props = PropertiesService.getScriptProperties();
-
-  if (!outputSheet) {
-    console.error('「アクセス状況」シートが見つかりません。');
-    return;
-  }
 
   // 名簿辞書作成(Harborの人シートから)
   const harborSs = SpreadsheetApp.openById(HARBOR_SHEET_ID);
@@ -327,14 +327,9 @@ function getCurrentAccessStatus() {
 
 function generatePermissionChangeList() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const idealSheet = ss.getSheetByName('アクセス権一覧');
-  const actualSheet = ss.getSheetByName('アクセス状況');
-  const changeSheet = ss.getSheetByName('権限変更');
-
-  if (!idealSheet || !actualSheet || !changeSheet) {
-    console.error('シートが見つかりません。');
-    return;
-  }
+  const idealSheet = ensureSheet_(ss, 'アクセス権一覧', ['氏名', 'GoogleID', 'フォルダー名', 'フォルダーID', '権限', '付与理由']);
+  const actualSheet = ensureSheet_(ss, 'アクセス状況', ['氏名', 'GoogleID', 'フォルダー名', 'フォルダーID', '権限', '区分']);
+  const changeSheet = ensureSheet_(ss, '権限変更', ['氏名', 'GoogleID', 'フォルダー名', 'フォルダーID', '権限', '操作内容']);
 
   const harborSs = SpreadsheetApp.openById(HARBOR_SHEET_ID);
   const peopleSheet = harborSs.getSheetByName('人');
@@ -419,10 +414,9 @@ function executePermissionChanges() {
   const TIME_LIMIT = 5 * 60 * 1000; // 5分
 
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const changeSheet = ss.getSheetByName('権限変更');
-  const logSheet = ss.getSheetByName('ログ');
+  const changeSheet = ensureSheet_(ss, '権限変更', ['氏名', 'GoogleID', 'フォルダー名', 'フォルダーID', '権限', '操作内容']);
+  const logSheet = ensureSheet_(ss, 'ログ', ['日時', '氏名', 'GoogleID', 'フォルダー名', 'フォルダーID', '結果']);
 
-  if (!changeSheet) return;
   const lastRow = changeSheet.getLastRow();
   if (lastRow < 2) return;
 
@@ -598,25 +592,31 @@ function deleteTriggers_(functionName) {
 /**
  * ▼ 導入手順 ▼
  *
- * 1. 今までお使いの「アクセス権管理」スプレッドシートを開く
- * 2. 拡張機能 → Apps Script を開く
- * 3. 既存のコードは残したまま(または新しいファイルを追加して)、この内容を貼り付ける
- *    ※ 関数名が重複する場合(onOpenなど)は、古い方を削除するか、
- *      このファイルの内容で上書きしてください
- * 4. 画面上部のサービス(+ボタン)から「Drive API」の詳細サービスを追加する
- *    (元のスクリプトで既に追加済みの場合は不要です)
- * 5. スプレッドシートを再読み込みし、メニューに「Harbor連携 管理メニュー」が
- *    出てくることを確認する
+ * 1. sheets.google.com で、新しい空のスプレッドシートを1つ作る
+ *    (名前は何でもよいが、例:「CREW Harbor 権限管理」)
+ * 2. そのスプレッドシートの、拡張機能 → Apps Script を開く
+ * 3. 最初から入っている空のコード(function myFunction() {} など)を全部消して、
+ *    このファイルの内容をすべて貼り付ける
+ * 4. 画面左側の「サービス」の横の + ボタンから「Drive API」を検索して追加する
+ *    (「Drive」ではなく「Drive API」という詳細サービスの方です)
+ * 5. スプレッドシートのタブを開き直す(再読み込みする)。
+ *    メニューバーに「Harbor連携 管理メニュー」が出てくることを確認する
  * 6. まず「① アクセス権一覧 更新(Harborから取得)」を1回実行してみる
  *    → 初回はGoogleアカウントへのアクセス許可を求められるので、許可する
- *    → 「アクセス権一覧」シートに、Harborの団体所属・クラウドシートの内容から
- *      作られた一覧が入れば成功
- * 7. 続けて「①〜④ まとめて今すぐ実行」を1回実行し、「権限変更」「ログ」シートに
- *    意図した内容が反映されるか確認する
+ *      (「このアプリは Google で確認されていません」と出た場合は、
+ *      詳細を開いて「(安全ではないページ)に移動」を選べば進めます。
+ *      自分で作ったスクリプトなので問題ありません)
+ *    → 「アクセス権一覧」というシートが自動で作られ、Harborの団体所属・
+ *      クラウドシートの内容から作られた一覧が入れば成功
+ * 7. 続けて「①〜④ まとめて今すぐ実行」を1回実行し、「権限変更」「ログ」シートが
+ *    自動で作られ、意図した内容が反映されるか確認する
  * 8. 問題なければ「毎晩自動実行を有効にする」を1回実行する
  *    (これで、Harbor側でロールやDriveリンクを変更するたびに、
  *    毎晩自動でDriveの共有設定に反映されるようになります)
  *
+ * ※ 作業用のシート(アクセス権一覧・アクセス状況・権限変更・ログ)は、
+ *   それぞれ初めて実行したときに自動で作られます。事前に手作業で
+ *   シートを用意する必要はありません。
  * ※ 「クラウド」シートに登録するURLは、必ずGoogleドライブの「フォルダー」の
  *   URLにしてください(ファイル単体のURLは対応していません)。
  * ※ 反映結果は「ログ」シートに毎回記録されるので、翌朝に確認できます。
