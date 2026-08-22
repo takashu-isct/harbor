@@ -4,6 +4,14 @@
  * 「あるべき権限一覧」をCREW Harborのスプレッドシート(団体所属・人・クラウド)から作り、
  * 現状のGoogleドライブの権限と突き合わせて、差分だけを反映する仕組みです。
  *
+ * Googleドライブは、フォルダーの所有者(オーナー)か共有管理権限を持つ人しか
+ * 共有設定を変更できません。そのため、各団体・個人が別々に持っている既存の
+ * フォルダーではなく、このスクリプトを動かしているGoogleアカウントの
+ * マイドライブ直下に「CREW Harbor」フォルダーを作り、その下に
+ * 団体名フォルダー → ロール名フォルダー という構成をスクリプト自身が自動で作成・
+ * 管理します(⓪の処理)。作られたフォルダーのURLはHarborのクラウドシートにも
+ * 自動で登録されるので、harbor.isct-crew.jp のDrive画面にもそのまま表示されます。
+ *
  * このスクリプトは、新しく空のGoogleスプレッドシートを1つ用意して、
  * そこに貼り付けて使うことを想定しています。作業用のシート(アクセス権一覧・
  * アクセス状況・権限変更・ログ)は、初めて各機能を実行したときに自動で作られるので、
@@ -33,13 +41,15 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
 
   ui.createMenu('Harbor連携 管理メニュー')
+    .addItem('⓪ フォルダー構成を作成・Harborに登録', 'buildAndRegisterFolderStructure')
+    .addSeparator()
     .addItem('① アクセス権一覧 更新(Harborから取得)', 'createIdealAccessListFromHarbor')
     .addItem('② アクセス状況 更新', 'getCurrentAccessStatus')
     .addSeparator()
     .addItem('③ 権限変更リスト作成', 'generatePermissionChangeList')
     .addItem('④ 権限変更リストを反映', 'executePermissionChanges')
     .addSeparator()
-    .addItem('①〜④ まとめて今すぐ実行', 'runFullSyncManually')
+    .addItem('⓪〜④ まとめて今すぐ実行', 'runFullSyncManually')
     .addSeparator()
     .addItem('毎晩自動実行を有効にする', 'installNightlyTrigger')
     .addItem('毎晩自動実行を停止する', 'removeNightlyTrigger')
@@ -57,6 +67,158 @@ function ensureSheet_(ss, name, headers) {
     sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
   }
   return sheet;
+}
+
+// ===========================================================================
+// ⓪ CREW直下に「団体名フォルダー→ロール名フォルダー」の構成を自動で作り、
+//    HarborのクラウドシートにそれぞれのURLを自動登録する
+// ===========================================================================
+
+// このスクリプトを動かしているアカウントのマイドライブ直下に作る、
+// 一番親になるフォルダーの名前。
+const CREW_ROOT_FOLDER_NAME = 'CREW Harbor';
+// 一度作った①のフォルダーのIDを覚えておくためのスクリプトプロパティのキー。
+const ROOT_FOLDER_ID_PROPERTY = 'CREW_ROOT_FOLDER_ID';
+
+/**
+ * 指定した名前のフォルダーが親フォルダーの直下になければ作る。
+ * 既にあれば(同名が複数あっても)最初の1つを返す。
+ */
+function ensureFolder_(parentFolder, name) {
+  const existing = parentFolder.getFoldersByName(name);
+  if (existing.hasNext()) return existing.next();
+  return parentFolder.createFolder(name);
+}
+
+/**
+ * CREWの一番親フォルダー(このスクリプトを動かしているアカウントの
+ * マイドライブ直下)を取得する。無ければ作る。一度作ったフォルダーのIDは
+ * スクリプトプロパティに保存し、次回以降はそのIDをそのまま使う
+ * (同じ名前のフォルダーを毎回検索すると、万が一同名フォルダーが
+ * 他にできてしまった場合に取り違えるおそれがあるため)。
+ */
+function ensureRootFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const savedId = props.getProperty(ROOT_FOLDER_ID_PROPERTY);
+  if (savedId) {
+    try {
+      return DriveApp.getFolderById(savedId);
+    } catch (e) {
+      // 保存されていたフォルダーが削除された等。下で作り直す。
+    }
+  }
+  const folder = ensureFolder_(DriveApp.getRootFolder(), CREW_ROOT_FOLDER_NAME);
+  props.setProperty(ROOT_FOLDER_ID_PROPERTY, folder.getId());
+  return folder;
+}
+
+/**
+ * Harborの団体シートから団体一覧(ID・名前)を取得する。
+ */
+function getHarborGroups_() {
+  const harborSs = SpreadsheetApp.openById(HARBOR_SHEET_ID);
+  const groupSheet = harborSs.getSheetByName('団体');
+  const groups = [];
+  const lastRow = groupSheet.getLastRow();
+  if (lastRow > 1) {
+    const data = groupSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+    data.forEach(row => {
+      if (row[0]) groups.push({ id: row[0], name: row[1] || row[0] });
+    });
+  }
+  return groups;
+}
+
+/**
+ * Harborのロールシートから、団体ごとのロール一覧を取得する。
+ */
+function getHarborRolesByGroup_() {
+  const harborSs = SpreadsheetApp.openById(HARBOR_SHEET_ID);
+  const roleSheet = harborSs.getSheetByName('ロール');
+  const rolesByGroup = new Map(); // groupId -> [{name, isAdmin}]
+  const lastRow = roleSheet.getLastRow();
+  if (lastRow > 1) {
+    const data = roleSheet.getRange(2, 1, lastRow - 1, 3).getValues();
+    data.forEach(row => {
+      const groupId = row[0];
+      const name = row[1];
+      const isAdmin = String(row[2]).toUpperCase() === 'TRUE';
+      if (!groupId || !name) return;
+      if (!rolesByGroup.has(groupId)) rolesByGroup.set(groupId, []);
+      rolesByGroup.get(groupId).push({ name: name, isAdmin: isAdmin });
+    });
+  }
+  return rolesByGroup;
+}
+
+/**
+ * Harborのクラウドシートに、団体ID+URLが一致する行があれば内容を上書きし、
+ * 無ければ新しい行として追加する(このスクリプトを繰り返し実行しても、
+ * 同じフォルダーの行が増え続けないようにするため)。
+ */
+function upsertHarborCloudLink_(groupId, label, url, roles, permission) {
+  const harborSs = SpreadsheetApp.openById(HARBOR_SHEET_ID);
+  const cloudSheet = harborSs.getSheetByName('クラウド');
+  const rolesStr = roles.join(',');
+  const lastRow = cloudSheet.getLastRow();
+
+  if (lastRow > 1) {
+    const data = cloudSheet.getRange(2, 1, lastRow - 1, 5).getValues();
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] === groupId && data[i][2] === url) {
+        cloudSheet.getRange(i + 2, 2, 1, 4).setValues([[label, url, rolesStr, permission]]);
+        return;
+      }
+    }
+  }
+  cloudSheet.appendRow([groupId, label, url, rolesStr, permission]);
+}
+
+/**
+ * ⓪ CREWフォルダーの下に「団体名」→「ロール名」の構成を自動で作り、
+ *    それぞれのフォルダーURLをHarborのクラウドシートに登録する。
+ *    - 団体フォルダー自体は、その団体の管理者ロール(複数可)を持つ人にだけ見せる
+ *      (Googleドライブの仕組み上、親フォルダーを共有された人は中のロール
+ *      フォルダーも自動的に見られるようになる)
+ *    - ロールフォルダーは、そのロールを持つ人にだけ見せる
+ *    - 団体に管理者ロールが1つも見つからない場合は、誤って全員に公開して
+ *      しまわないよう、団体フォルダー全体の共有登録はスキップする
+ *    ※ ロール名を後から変更した場合、フォルダー名までは自動で追随しない
+ *      (新しい名前のフォルダーが別途作られる)。その場合は手動でDrive側の
+ *      フォルダー名を直すか、不要になった方をHarborのクラウド管理画面から
+ *      削除してください。
+ */
+function buildAndRegisterFolderStructure() {
+  const rootFolder = ensureRootFolder_();
+  const groups = getHarborGroups_();
+  const rolesByGroup = getHarborRolesByGroup_();
+
+  let folderCount = 0;
+
+  groups.forEach(group => {
+    const groupFolder = ensureFolder_(rootFolder, group.name);
+    folderCount++;
+
+    const roles = rolesByGroup.get(group.id) || [];
+    const adminRoleNames = roles.filter(r => r.isAdmin).map(r => r.name);
+
+    if (adminRoleNames.length > 0) {
+      upsertHarborCloudLink_(group.id, '団体フォルダー(全体)', groupFolder.getUrl(), adminRoleNames, 'writer');
+    } else {
+      console.warn(`団体「${group.name}」に管理者ロールが見つからないため、団体フォルダー全体の共有登録をスキップしました。`);
+    }
+
+    roles.forEach(role => {
+      const roleFolder = ensureFolder_(groupFolder, role.name);
+      folderCount++;
+      upsertHarborCloudLink_(group.id, role.name, roleFolder.getUrl(), [role.name], 'writer');
+    });
+  });
+
+  console.log(`${folderCount} 件のフォルダーを確認・作成しました。`);
+  if (!isAutoChainRunning_()) {
+    Browser.msgBox(`フォルダー構成の作成・登録が完了しました(${folderCount}件)。`);
+  }
 }
 
 // ===========================================================================
@@ -511,10 +673,11 @@ function executePermissionChanges() {
 // ===========================================================================
 
 /**
- * メニューの「①〜④ まとめて今すぐ実行」から呼ばれる。
+ * メニューの「⓪〜④ まとめて今すぐ実行」から呼ばれる。
  */
 function runFullSyncManually() {
   setAutoChainFlag_();
+  buildAndRegisterFolderStructure();
   createIdealAccessListFromHarbor();
   getCurrentAccessStatus();
   // ここから先(③④、場合によっては②の続き)は、各関数の中で自動的に連鎖する。
@@ -601,23 +764,33 @@ function deleteTriggers_(functionName) {
  *    (「Drive」ではなく「Drive API」という詳細サービスの方です)
  * 5. スプレッドシートのタブを開き直す(再読み込みする)。
  *    メニューバーに「Harbor連携 管理メニュー」が出てくることを確認する
- * 6. まず「① アクセス権一覧 更新(Harborから取得)」を1回実行してみる
+ * 6. まず「⓪ フォルダー構成を作成・Harborに登録」を1回実行してみる
  *    → 初回はGoogleアカウントへのアクセス許可を求められるので、許可する
  *      (「このアプリは Google で確認されていません」と出た場合は、
  *      詳細を開いて「(安全ではないページ)に移動」を選べば進めます。
  *      自分で作ったスクリプトなので問題ありません)
- *    → 「アクセス権一覧」というシートが自動で作られ、Harborの団体所属・
- *      クラウドシートの内容から作られた一覧が入れば成功
- * 7. 続けて「①〜④ まとめて今すぐ実行」を1回実行し、「権限変更」「ログ」シートが
+ *    → このスクリプトを動かしているGoogleアカウントのマイドライブ直下に
+ *      「CREW Harbor」フォルダーができ、その下に団体名フォルダー→ロール名
+ *      フォルダーが作られ、HarborのクラウドシートにそれぞれのURLが
+ *      自動で登録されれば成功(harbor.isct-crew.jp のDrive画面にも
+ *      すぐ反映されます)
+ * 7. 続けて「① アクセス権一覧 更新(Harborから取得)」を実行し、
+ *    「アクセス権一覧」というシートに、6で登録したフォルダーの分の行が
+ *    入っていることを確認する
+ * 8. 続けて「⓪〜④ まとめて今すぐ実行」を1回実行し、「権限変更」「ログ」シートが
  *    自動で作られ、意図した内容が反映されるか確認する
- * 8. 問題なければ「毎晩自動実行を有効にする」を1回実行する
- *    (これで、Harbor側でロールやDriveリンクを変更するたびに、
- *    毎晩自動でDriveの共有設定に反映されるようになります)
+ * 9. 問題なければ「毎晩自動実行を有効にする」を1回実行する
+ *    (これで、Harbor側で団体・ロール・所属・Driveリンクを変更するたびに、
+ *    毎晩自動でフォルダー構成とDriveの共有設定に反映されるようになります)
  *
- * ※ 作業用のシート(アクセス権一覧・アクセス状況・権限変更・ログ)は、
- *   それぞれ初めて実行したときに自動で作られます。事前に手作業で
- *   シートを用意する必要はありません。
- * ※ 「クラウド」シートに登録するURLは、必ずGoogleドライブの「フォルダー」の
+ * ※ 作業用のシート(アクセス権一覧・アクセス状況・権限変更・ログ)や、
+ *   CREW Harborフォルダー以下の団体・ロールフォルダーは、それぞれ初めて
+ *   実行したときに自動で作られます。事前に手作業で用意する必要はありません。
+ * ※ 「クラウド」シートに手動で登録するURLも、必ずGoogleドライブの「フォルダー」の
  *   URLにしてください(ファイル単体のURLは対応していません)。
+ * ※ ロール名を後から変更すると、Drive側では新しい名前のフォルダーが別途
+ *   作られます(既存フォルダーの自動リネームはしません)。気になる場合は
+ *   「⓪」再実行後にDrive側で手動整理するか、不要になった方をHarborの
+ *   クラウド管理画面から削除してください。
  * ※ 反映結果は「ログ」シートに毎回記録されるので、翌朝に確認できます。
  */
