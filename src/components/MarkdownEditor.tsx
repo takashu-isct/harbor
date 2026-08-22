@@ -15,21 +15,20 @@ export function MarkdownEditor({
   const [value, setValue] = useState(defaultValue ?? "");
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+    <div className="flex min-h-0 flex-1 flex-col gap-1">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 md:flex-row">
         <textarea
           name={name}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           required
-          rows={20}
           placeholder={
             "Markdownで書けます\n# 見出し\n- リスト\n**太字**"
           }
-          className="rounded-none bg-surface px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted"
+          className="min-h-64 flex-1 resize-none rounded-none bg-surface px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted"
         />
         <div
-          className={`min-h-[20rem] overflow-auto rounded-none bg-surface px-3 py-2 text-sm text-foreground ${proseClass}`}
+          className={`min-h-64 flex-1 overflow-auto rounded-none bg-surface px-3 py-2 text-sm text-foreground ${proseClass}`}
         >
           {value.trim() ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
@@ -38,7 +37,7 @@ export function MarkdownEditor({
           )}
         </div>
       </div>
-      <span className="text-xs text-muted">左に入力すると、右にプレビューが表示されます。</span>
+      <span className="shrink-0 text-xs text-muted">左に入力すると、右にプレビューが表示されます。</span>
     </div>
   );
 }

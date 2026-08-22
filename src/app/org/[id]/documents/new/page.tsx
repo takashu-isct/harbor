@@ -142,7 +142,7 @@ export default async function NewDocumentPage({
         </div>
       )}
 
-      <form action={createEntry} className="flex flex-col gap-3">
+      <form action={createEntry} className="flex min-h-0 flex-1 flex-col gap-3">
         {!fixedSegs && (
           <>
             <label className="flex max-w-md flex-col gap-1 text-sm text-muted">

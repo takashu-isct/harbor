@@ -63,7 +63,7 @@ export default async function EditDocumentPage({
         <span className="text-sm font-normal text-muted">({doc.category})</span>
       </h1>
 
-      <form action={saveDocument} className="flex flex-col gap-3">
+      <form action={saveDocument} className="flex min-h-0 flex-1 flex-col gap-3">
         <label className="flex max-w-md flex-col gap-1 text-sm text-muted">
           タイトル
           <input
