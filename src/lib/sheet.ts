@@ -691,13 +691,14 @@ export type LedgerEntry = {
   type: "収入" | "支出";
   recordedBy: string;
   recordedAt: string;
+  item: string;
 };
 
 export const findLedgerEntries = cache(async (groupId: string): Promise<LedgerEntry[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "会計!A2:G",
+    range: "会計!A2:H",
   });
   return (res.data.values ?? [])
     .filter((r) => r[0] === groupId)
@@ -709,6 +710,7 @@ export const findLedgerEntries = cache(async (groupId: string): Promise<LedgerEn
       type: (r[4] === "支出" ? "支出" : "収入") as "収入" | "支出",
       recordedBy: r[5] ?? "",
       recordedAt: r[6] ?? "",
+      item: r[7] ?? "",
     }))
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 });
@@ -720,11 +722,12 @@ export async function addLedgerEntry(params: {
   amount: number;
   type: "収入" | "支出";
   recordedBy: string;
+  item: string;
 }): Promise<void> {
   const sheets = getSheetsClient();
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: "会計!A:G",
+    range: "会計!A:H",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -736,10 +739,75 @@ export async function addLedgerEntry(params: {
           params.type,
           params.recordedBy,
           new Date().toISOString(),
+          sanitizeCell(params.item),
         ],
       ],
     },
   });
+}
+
+// 会計品目シートは初期状態では存在しない可能性があるため、
+// 品目を初めて追加するタイミングで自動的にシート自体を作成する
+// (gas/harbor-drive-sync.gsで採用した「自己インストール」と同じ考え方)。
+async function ensureSheetTab(title: string, headers: string[]): Promise<void> {
+  const sheets = getSheetsClient();
+  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  if (meta.data.sheets?.some((s) => s.properties?.title === title)) return;
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId: SHEET_ID,
+    requestBody: { requests: [{ addSheet: { properties: { title } } }] },
+  });
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID,
+    range: `${title}!A1`,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [headers] },
+  });
+}
+
+export const findLedgerItems = cache(async (groupId: string): Promise<string[]> => {
+  const sheets = getSheetsClient();
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "会計品目!A2:B",
+    });
+    return (res.data.values ?? [])
+      .filter((r) => r[0] === groupId)
+      .map((r) => r[1] ?? "")
+      .filter(Boolean);
+  } catch {
+    // シートがまだ作られていない(品目を1件も追加したことがない)場合はここに来る。
+    return [];
+  }
+});
+
+export async function addLedgerItem(groupId: string, name: string): Promise<void> {
+  await ensureSheetTab("会計品目", ["団体ID", "品目名"]);
+  const sheets = getSheetsClient();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "会計品目!A:B",
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values: [[groupId, sanitizeCell(name)]] },
+  });
+}
+
+export async function removeLedgerItem(groupId: string, name: string): Promise<void> {
+  const sheets = getSheetsClient();
+  let rows: string[][];
+  try {
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: SHEET_ID,
+      range: "会計品目!A2:B",
+    });
+    rows = (res.data.values ?? []) as string[][];
+  } catch {
+    return;
+  }
+  const idx = rows.findIndex((r) => r[0] === groupId && r[1] === name);
+  if (idx === -1) return;
+  await deleteSheetRow("会計品目", idx + 2);
 }
 
 export type OrgDocument = {

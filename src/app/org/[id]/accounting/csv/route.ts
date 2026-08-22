@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { findActiveAffiliationsByEmail, findLedgerEntries } from "@/lib/sheet";
+import { findActiveAffiliationsByEmail, findLedgerEntries, hasAdminRole } from "@/lib/sheet";
 
 // CSVをExcel等で開いたときに先頭が=+-@だと数式として実行されてしまうのを防ぐ
 // (Googleスプレッドシート向けのsanitizeCellと同じ考え方)。
@@ -20,7 +20,8 @@ export async function GET(
   }
 
   const affiliations = await findActiveAffiliationsByEmail(session.user.email);
-  if (!affiliations.some((a) => a.groupId === id)) {
+  const affiliation = affiliations.find((a) => a.groupId === id);
+  if (!affiliation || !(await hasAdminRole(id, affiliation.roles))) {
     return new NextResponse("Not Found", { status: 404 });
   }
 
@@ -31,12 +32,13 @@ export async function GET(
 
   let balance = 0;
   const rows: string[][] = [
-    ["日付", "内容", "収入", "支出", "残高", "登録者", "登録日時"],
+    ["日付", "内容", "品目", "収入", "支出", "残高", "登録者", "登録日時"],
     ...entries.map((e) => {
       balance += e.type === "収入" ? e.amount : -e.amount;
       return [
         e.date,
         e.description,
+        e.item,
         e.type === "収入" ? String(e.amount) : "",
         e.type === "支出" ? String(e.amount) : "",
         String(balance),
