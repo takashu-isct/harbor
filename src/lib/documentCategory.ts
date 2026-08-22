@@ -50,10 +50,16 @@ export type CategoryNode = {
   count: number;
 };
 
+export type CategoryItem = { category: string; isFolder: boolean };
+
 // サイドバー用のツリー構造。rootsは常にフォルダとして表示する(文書が0件でも表示させたいため)。
-export function buildCategoryTree(roots: string[], allCategories: string[]): CategoryNode[] {
+// フォルダ構造そのものは空フォルダの目印行も含めて判定するが、件数バッジは実際の文書数だけを数える。
+export function buildCategoryTree(roots: string[], items: CategoryItem[]): CategoryNode[] {
+  const allCategories = items.map((i) => i.category);
+  const documentCategories = items.filter((i) => !i.isFolder).map((i) => i.category);
+
   function countUnder(prefix: string[]): number {
-    return allCategories.filter((c) => isUnderPrefix(c, prefix)).length;
+    return documentCategories.filter((c) => isUnderPrefix(c, prefix)).length;
   }
   function build(prefix: string[]): CategoryNode[] {
     return childFolders(allCategories, prefix).map((name) => {

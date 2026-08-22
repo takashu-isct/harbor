@@ -668,6 +668,9 @@ export type OrgDocument = {
   authorName: string;
   createdAt: string;
   category: string;
+  // 中身が空でも存在を示したい「空フォルダの目印」行の場合true。一覧には出さず、
+  // フォルダツリー・件数バッジの計算にだけ使う。
+  isFolder: boolean;
 };
 
 export async function findDocumentsByGroup(groupId: string): Promise<OrgDocument[]> {
@@ -682,11 +685,12 @@ export async function findDocumentsByGroup(groupId: string): Promise<OrgDocument
       id: r[0] ?? "",
       groupId: r[1] ?? "",
       title: r[2] ?? "",
-      // r[3] は過去に使っていた開催日列(廃止、後方互換のため列だけ残置)
+      // r[3] は種別列(空欄=通常の文書、folder=空フォルダの目印。過去は開催日を入れていた列を再利用)
       content: r[4] ?? "",
       authorName: r[5] ?? "",
       createdAt: r[6] ?? "",
       category: r[7] ?? "",
+      isFolder: r[3] === "folder",
     }))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
 }
@@ -723,6 +727,38 @@ export async function addDocument(params: {
           sanitizeCell(params.title),
           "",
           sanitizeCell(params.content),
+          sanitizeCell(params.authorName),
+          new Date().toISOString(),
+          sanitizeCell(params.category),
+        ],
+      ],
+    },
+  });
+}
+
+// 文書0件の空フォルダを作るための目印行を追加する。
+export async function addFolder(params: {
+  groupId: string;
+  category: string;
+  authorName: string;
+}): Promise<void> {
+  const sheets = getSheetsClient();
+  const id =
+    typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID,
+    range: "文書!A:H",
+    valueInputOption: "USER_ENTERED",
+    requestBody: {
+      values: [
+        [
+          id,
+          params.groupId,
+          "",
+          "folder",
+          "",
           sanitizeCell(params.authorName),
           new Date().toISOString(),
           sanitizeCell(params.category),

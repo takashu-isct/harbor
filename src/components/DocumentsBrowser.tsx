@@ -18,7 +18,7 @@ export async function DocumentsBrowser({
   );
   const prefixPath = joinCategory(prefix);
   const documents = allDocuments
-    .filter((m) => joinCategory(splitCategory(m.category)) === prefixPath)
+    .filter((m) => !m.isFolder && joinCategory(splitCategory(m.category)) === prefixPath)
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   return (
@@ -46,12 +46,20 @@ export async function DocumentsBrowser({
             ))}
           </span>
         </h1>
-        <Link
-          href={`/org/${groupId}/documents/new?category=${encodeURIComponent(prefixPath)}`}
-          className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-        >
-          ここに文書を作成
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/org/${groupId}/documents/new?category=${encodeURIComponent(prefixPath)}&fixed=1&kind=folder`}
+            className="rounded-none bg-surface px-4 py-2 text-sm font-medium text-foreground transition hover:brightness-110"
+          >
+            フォルダーを作成
+          </Link>
+          <Link
+            href={`/org/${groupId}/documents/new?category=${encodeURIComponent(prefixPath)}&fixed=1&kind=document`}
+            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          >
+            文書を作成
+          </Link>
+        </div>
       </div>
 
       {folders.length === 0 && documents.length === 0 ? (

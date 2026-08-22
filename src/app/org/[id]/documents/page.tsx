@@ -29,15 +29,25 @@ export default async function DocumentsPage({
   const isAdmin = await hasAdminRole(id, affiliation.roles);
   const allDocuments = await findDocumentsByGroup(id);
   const visible = allDocuments
-    .filter((m) => canAccessCategory(m.category, affiliation.roles, isAdmin))
+    .filter((m) => !m.isFolder && canAccessCategory(m.category, affiliation.roles, isAdmin))
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   return (
     <DocumentsLayout groupId={id} activePath={[]}>
-      <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-        <span aria-hidden>📝</span>
-        最近の文書
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+          <span aria-hidden>📝</span>
+          最近の文書
+        </h1>
+        {affiliation.roles.length > 0 && (
+          <Link
+            href={`/org/${id}/documents/new`}
+            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+          >
+            新規作成
+          </Link>
+        )}
+      </div>
 
       {visible.length === 0 ? (
         <p className="text-sm text-muted">

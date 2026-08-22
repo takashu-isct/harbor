@@ -83,7 +83,7 @@ export async function DocumentsLayout({
   const roots = isAdmin ? allRoles.map((r) => r.name) : roles;
   const tree = buildCategoryTree(
     roots,
-    allDocuments.map((m) => m.category)
+    allDocuments.map((m) => ({ category: m.category, isFolder: m.isFolder }))
   );
 
   return (

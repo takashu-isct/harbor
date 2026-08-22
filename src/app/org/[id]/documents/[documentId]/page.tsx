@@ -30,7 +30,7 @@ export default async function DocumentDetailPage({
   }
 
   const doc = await findDocumentById(id, documentId);
-  if (!doc) {
+  if (!doc || doc.isFolder) {
     notFound();
   }
 
