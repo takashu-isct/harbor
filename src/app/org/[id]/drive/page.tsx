@@ -7,6 +7,7 @@ import {
   findActiveAffiliationsByEmail,
   findCloudLinksByGroup,
   findGroupById,
+  findRoles,
   hasAdminRole,
   removeCloudLink,
 } from "@/lib/sheet";
@@ -38,11 +39,16 @@ export default async function DrivePage({
     notFound();
   }
 
-  const [group, links, isAdmin] = await Promise.all([
+  const [group, allLinks, roles, isAdmin] = await Promise.all([
     findGroupById(id),
     findCloudLinksByGroup(id),
+    findRoles(id),
     hasAdminRole(id, affiliation.roles),
   ]);
+
+  const visibleLinks = allLinks.filter(
+    (l) => isAdmin || l.roles.length === 0 || l.roles.some((r) => affiliation.roles.includes(r))
+  );
 
   async function addCloudLinkAction(formData: FormData) {
     "use server";
@@ -55,9 +61,10 @@ export default async function DrivePage({
 
     const label = String(formData.get("label") ?? "").trim();
     const url = String(formData.get("url") ?? "").trim();
+    const linkRoles = formData.getAll("roles").map(String);
     if (!label || !url || !isSafeHttpUrl(url)) return;
 
-    await addCloudLink({ groupId: id, label, url });
+    await addCloudLink({ groupId: id, label, url, roles: linkRoles });
     revalidatePath(`/org/${id}/drive`);
   }
 
@@ -93,13 +100,13 @@ export default async function DrivePage({
         </p>
       </div>
 
-      {links.length === 0 ? (
+      {visibleLinks.length === 0 ? (
         <p className="text-sm text-muted">
           まだリンクが登録されていません。
         </p>
       ) : (
         <ul className="flex max-w-2xl flex-col gap-2">
-          {links.map((l) => (
+          {visibleLinks.map((l) => (
             <li
               key={l.url}
               className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
@@ -108,11 +115,14 @@ export default async function DrivePage({
                 href={l.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex flex-1 items-center gap-3"
+                className="flex flex-1 flex-wrap items-center gap-3"
               >
                 <span aria-hidden>📁</span>
                 <span className="text-foreground">{l.label}</span>
                 <span className="text-xs text-muted">{l.url}</span>
+                <span className="ml-auto text-xs text-muted">
+                  {l.roles.length > 0 ? l.roles.join("、") : "全員に表示"}
+                </span>
               </a>
               {isAdmin && (
                 <form action={removeCloudLinkAction}>
@@ -147,6 +157,19 @@ export default async function DrivePage({
             required
             className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
           />
+          <div className="flex flex-col gap-2">
+            <span className="text-sm text-muted">見せるロール</span>
+            {roles.map((r) => (
+              <label key={r.name} className="flex items-center gap-2 text-sm text-muted">
+                <input type="checkbox" name="roles" value={r.name} />
+                {r.name}
+              </label>
+            ))}
+            <span className="text-xs text-muted">
+              どれも選ばない場合は団体に所属する全員に表示されます。選ぶと、選んだロールを
+              持つ人(と管理者)にだけ表示されます。
+            </span>
+          </div>
           <button
             type="submit"
             className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"

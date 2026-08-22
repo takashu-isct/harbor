@@ -610,13 +610,15 @@ export type CloudLink = {
   groupId: string;
   label: string;
   url: string;
+  // 空配列は「団体に所属する全員に表示」を意味する。
+  roles: string[];
 };
 
 export const findCloudLinksByGroup = cache(async (groupId: string): Promise<CloudLink[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "クラウド!A2:C",
+    range: "クラウド!A2:D",
   });
   return (res.data.values ?? [])
     .filter((r) => r[0] === groupId)
@@ -624,6 +626,7 @@ export const findCloudLinksByGroup = cache(async (groupId: string): Promise<Clou
       groupId: r[0],
       label: r[1] ?? "",
       url: r[2] ?? "",
+      roles: parseCommaList(r[3]),
     }));
 });
 
@@ -631,14 +634,22 @@ export async function addCloudLink(params: {
   groupId: string;
   label: string;
   url: string;
+  roles: string[];
 }): Promise<void> {
   const sheets = getSheetsClient();
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: "クラウド!A:C",
+    range: "クラウド!A:D",
     valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [[params.groupId, sanitizeCell(params.label), params.url]],
+      values: [
+        [
+          params.groupId,
+          sanitizeCell(params.label),
+          params.url,
+          sanitizeCell(params.roles.join(",")),
+        ],
+      ],
     },
   });
 }
@@ -647,7 +658,7 @@ export async function removeCloudLink(groupId: string, url: string): Promise<voi
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "クラウド!A2:C",
+    range: "クラウド!A2:D",
   });
   const rows = res.data.values ?? [];
   const idx = rows.findIndex((r) => r[0] === groupId && r[2] === url);
