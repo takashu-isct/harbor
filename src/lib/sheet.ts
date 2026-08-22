@@ -612,13 +612,16 @@ export type CloudLink = {
   url: string;
   // 空配列は「団体に所属する全員に表示」を意味する。
   roles: string[];
+  // GoogleドライブのフォルダーIDへのアクセス権を自動反映するGAS向け。
+  // reader(閲覧者) / writer(編集者)。
+  permission: "reader" | "writer";
 };
 
 export const findCloudLinksByGroup = cache(async (groupId: string): Promise<CloudLink[]> => {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "クラウド!A2:D",
+    range: "クラウド!A2:E",
   });
   return (res.data.values ?? [])
     .filter((r) => r[0] === groupId)
@@ -627,6 +630,7 @@ export const findCloudLinksByGroup = cache(async (groupId: string): Promise<Clou
       label: r[1] ?? "",
       url: r[2] ?? "",
       roles: parseCommaList(r[3]),
+      permission: r[4] === "writer" ? "writer" : "reader",
     }));
 });
 
@@ -635,11 +639,12 @@ export async function addCloudLink(params: {
   label: string;
   url: string;
   roles: string[];
+  permission: "reader" | "writer";
 }): Promise<void> {
   const sheets = getSheetsClient();
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: "クラウド!A:D",
+    range: "クラウド!A:E",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -648,6 +653,7 @@ export async function addCloudLink(params: {
           sanitizeCell(params.label),
           params.url,
           sanitizeCell(params.roles.join(",")),
+          params.permission,
         ],
       ],
     },
@@ -658,7 +664,7 @@ export async function removeCloudLink(groupId: string, url: string): Promise<voi
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "クラウド!A2:D",
+    range: "クラウド!A2:E",
   });
   const rows = res.data.values ?? [];
   const idx = rows.findIndex((r) => r[0] === groupId && r[2] === url);

@@ -62,9 +62,10 @@ export default async function DrivePage({
     const label = String(formData.get("label") ?? "").trim();
     const url = String(formData.get("url") ?? "").trim();
     const linkRoles = formData.getAll("roles").map(String);
+    const permission = formData.get("permission") === "writer" ? "writer" : "reader";
     if (!label || !url || !isSafeHttpUrl(url)) return;
 
-    await addCloudLink({ groupId: id, label, url, roles: linkRoles });
+    await addCloudLink({ groupId: id, label, url, roles: linkRoles, permission });
     revalidatePath(`/org/${id}/drive`);
   }
 
@@ -122,6 +123,7 @@ export default async function DrivePage({
                 <span className="text-xs text-muted">{l.url}</span>
                 <span className="ml-auto text-xs text-muted">
                   {l.roles.length > 0 ? l.roles.join("、") : "全員に表示"}
+                  ・{l.permission === "writer" ? "編集者" : "閲覧者"}
                 </span>
               </a>
               {isAdmin && (
@@ -153,10 +155,14 @@ export default async function DrivePage({
           <input
             name="url"
             type="url"
-            placeholder="https://drive.google.com/..."
+            placeholder="https://drive.google.com/drive/folders/..."
             required
             className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
           />
+          <span className="text-xs text-muted">
+            Googleドライブの「フォルダー」のURLを指定してください
+            (共有設定は下の内容で毎晩自動的に更新されます)。
+          </span>
           <div className="flex flex-col gap-2">
             <span className="text-sm text-muted">見せるロール</span>
             {roles.map((r) => (
@@ -170,6 +176,17 @@ export default async function DrivePage({
               持つ人(と管理者)にだけ表示されます。
             </span>
           </div>
+          <label className="flex max-w-md flex-col gap-1 text-sm text-muted">
+            権限
+            <select
+              name="permission"
+              defaultValue="reader"
+              className="rounded-none bg-surface px-3 py-2 text-sm text-foreground"
+            >
+              <option value="reader">閲覧者</option>
+              <option value="writer">編集者</option>
+            </select>
+          </label>
           <button
             type="submit"
             className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
