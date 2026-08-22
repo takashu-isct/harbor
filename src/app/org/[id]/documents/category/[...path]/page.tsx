@@ -1,11 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { findActiveAffiliationsByEmail, hasAdminRole } from "@/lib/sheet";
-import { canAccessTop } from "@/lib/minutesCategory";
-import { MinutesLayout } from "@/components/MinutesLayout";
-import { MinutesBrowser } from "@/components/MinutesBrowser";
+import { canAccessTop } from "@/lib/documentCategory";
+import { DocumentsLayout } from "@/components/DocumentsLayout";
+import { DocumentsBrowser } from "@/components/DocumentsBrowser";
 
-export default async function MinutesCategoryPage({
+export default async function DocumentsCategoryPage({
   params,
 }: {
   params: Promise<{ id: string; path: string[] }>;
@@ -29,8 +29,8 @@ export default async function MinutesCategoryPage({
   }
 
   return (
-    <MinutesLayout groupId={id} activePath={prefix}>
-      <MinutesBrowser groupId={id} prefix={prefix} />
-    </MinutesLayout>
+    <DocumentsLayout groupId={id} activePath={prefix}>
+      <DocumentsBrowser groupId={id} prefix={prefix} />
+    </DocumentsLayout>
   );
 }

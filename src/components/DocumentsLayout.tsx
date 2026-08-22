@@ -3,12 +3,12 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
+  findDocumentsByGroup,
   findGroupById,
-  findMinutesByGroup,
   findRoles,
   hasAdminRole,
 } from "@/lib/sheet";
-import { buildCategoryTree, type CategoryNode } from "@/lib/minutesCategory";
+import { buildCategoryTree, type CategoryNode } from "@/lib/documentCategory";
 
 function TreeNode({
   groupId,
@@ -19,7 +19,7 @@ function TreeNode({
   node: CategoryNode;
   activePath: string[];
 }) {
-  const href = `/org/${groupId}/minutes/category/${node.path
+  const href = `/org/${groupId}/documents/category/${node.path
     .map(encodeURIComponent)
     .join("/")}`;
   const isActive = node.path.join("/") === activePath.join("/");
@@ -58,7 +58,7 @@ function TreeNode({
   );
 }
 
-export async function MinutesLayout({
+export async function DocumentsLayout({
   groupId,
   activePath,
   children,
@@ -78,12 +78,12 @@ export async function MinutesLayout({
   const affiliation = affiliations.find((a) => a.groupId === groupId);
   const roles = affiliation?.roles ?? [];
   const isAdmin = affiliation ? await hasAdminRole(groupId, roles) : false;
-  const allMinutes = await findMinutesByGroup(groupId);
+  const allDocuments = await findDocumentsByGroup(groupId);
 
   const roots = isAdmin ? allRoles.map((r) => r.name) : roles;
   const tree = buildCategoryTree(
     roots,
-    allMinutes.map((m) => m.category)
+    allDocuments.map((m) => m.category)
   );
 
   return (
@@ -94,7 +94,7 @@ export async function MinutesLayout({
         </Link>
         <h2 className="mb-2 mt-4 flex items-center gap-2 text-sm font-semibold text-foreground">
           <span aria-hidden>📝</span>
-          議事録
+          文書管理
         </h2>
         <nav className="flex flex-col gap-0.5">
           {tree.length === 0 ? (

@@ -660,22 +660,21 @@ export async function addLedgerEntry(params: {
   });
 }
 
-export type MeetingMinutes = {
+export type OrgDocument = {
   id: string;
   groupId: string;
   title: string;
-  meetingDate: string;
   content: string;
   authorName: string;
   createdAt: string;
   category: string;
 };
 
-export async function findMinutesByGroup(groupId: string): Promise<MeetingMinutes[]> {
+export async function findDocumentsByGroup(groupId: string): Promise<OrgDocument[]> {
   const sheets = getSheetsClient();
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID,
-    range: "議事録!A2:H",
+    range: "文書!A2:H",
   });
   return (res.data.values ?? [])
     .filter((r) => r[1] === groupId)
@@ -683,27 +682,26 @@ export async function findMinutesByGroup(groupId: string): Promise<MeetingMinute
       id: r[0] ?? "",
       groupId: r[1] ?? "",
       title: r[2] ?? "",
-      meetingDate: r[3] ?? "",
+      // r[3] は過去に使っていた開催日列(廃止、後方互換のため列だけ残置)
       content: r[4] ?? "",
       authorName: r[5] ?? "",
       createdAt: r[6] ?? "",
       category: r[7] ?? "",
     }))
-    .sort((a, b) => (a.meetingDate < b.meetingDate ? 1 : a.meetingDate > b.meetingDate ? -1 : 0));
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
 }
 
-export async function findMinuteById(
+export async function findDocumentById(
   groupId: string,
   id: string
-): Promise<MeetingMinutes | null> {
-  const all = await findMinutesByGroup(groupId);
+): Promise<OrgDocument | null> {
+  const all = await findDocumentsByGroup(groupId);
   return all.find((m) => m.id === id) ?? null;
 }
 
-export async function addMinute(params: {
+export async function addDocument(params: {
   groupId: string;
   title: string;
-  meetingDate: string;
   content: string;
   authorName: string;
   category: string;
@@ -715,7 +713,7 @@ export async function addMinute(params: {
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID,
-    range: "議事録!A:H",
+    range: "文書!A:H",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -723,7 +721,7 @@ export async function addMinute(params: {
           id,
           params.groupId,
           sanitizeCell(params.title),
-          params.meetingDate,
+          "",
           sanitizeCell(params.content),
           sanitizeCell(params.authorName),
           new Date().toISOString(),

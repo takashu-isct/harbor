@@ -1,14 +1,15 @@
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
-  addMinute,
+  addDocument,
   findActiveAffiliationsByEmail,
   findPersonByEmail,
 } from "@/lib/sheet";
-import { canAccessTop, joinCategory, splitCategory } from "@/lib/minutesCategory";
-import { MinutesLayout } from "@/components/MinutesLayout";
+import { canAccessTop, joinCategory, splitCategory } from "@/lib/documentCategory";
+import { DocumentsLayout } from "@/components/DocumentsLayout";
+import { MarkdownEditor } from "@/components/MarkdownEditor";
 
-export default async function NewMinutePage({
+export default async function NewDocumentPage({
   params,
   searchParams,
 }: {
@@ -31,8 +32,6 @@ export default async function NewMinutePage({
     notFound();
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
   const prefillSegs = category ? splitCategory(category) : [];
   const defaultRole =
     prefillSegs[0] && affiliation.roles.includes(prefillSegs[0])
@@ -40,7 +39,7 @@ export default async function NewMinutePage({
       : affiliation.roles[0];
   const defaultSubPath = joinCategory(prefillSegs.slice(1));
 
-  async function createMinute(formData: FormData) {
+  async function createDocument(formData: FormData) {
     "use server";
     const session = await auth();
     if (!session?.user?.email) return;
@@ -59,21 +58,19 @@ export default async function NewMinutePage({
     const subPath = segs.slice(0, -1);
     const categoryPath = joinCategory([role, ...subPath]);
 
-    const meetingDate = String(formData.get("meetingDate") ?? "");
     const content = String(formData.get("content") ?? "").trim();
-    if (!title || !meetingDate || !content) return;
+    if (!title || !content) return;
 
     const person = await findPersonByEmail(session.user.email);
-    await addMinute({
+    await addDocument({
       groupId: id,
       title,
-      meetingDate,
       content,
       authorName: person?.name || session.user.email,
       category: categoryPath,
     });
     redirect(
-      `/org/${id}/minutes/category/${categoryPath
+      `/org/${id}/documents/category/${categoryPath
         .split("/")
         .map(encodeURIComponent)
         .join("/")}`
@@ -81,17 +78,17 @@ export default async function NewMinutePage({
   }
 
   return (
-    <MinutesLayout
+    <DocumentsLayout
       groupId={id}
       activePath={prefillSegs.length > 0 ? prefillSegs : [defaultRole]}
     >
       <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
         <span aria-hidden>📝</span>
-        議事録を書く
+        文書を作成
       </h1>
 
-      <form action={createMinute} className="flex max-w-2xl flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm text-muted">
+      <form action={createDocument} className="flex flex-col gap-3">
+        <label className="flex max-w-md flex-col gap-1 text-sm text-muted">
           フォルダ(ロール)
           <select
             name="role"
@@ -105,37 +102,23 @@ export default async function NewMinutePage({
             ))}
           </select>
         </label>
-        <label className="flex flex-col gap-1 text-sm text-muted">
+        <label className="flex max-w-md flex-col gap-1 text-sm text-muted">
           サブフォルダ/タイトル
           <input
             name="pathTitle"
             type="text"
-            defaultValue={
-              defaultSubPath ? `${defaultSubPath}/` : ""
-            }
+            defaultValue={defaultSubPath ? `${defaultSubPath}/` : ""}
             placeholder="例: 月次報告/2026-08/第3回定例会"
             required
             className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
           />
           <span className="text-xs text-muted">
-            「/」区切りでサブフォルダを作れます。最後の1区切りがタイトルになります
-            (例: 月次報告/2026-08/第3回定例会 → 月次報告/2026-08フォルダに「第3回定例会」を保存)
+            「/」区切りでサブフォルダを作れます。最後の1区切りがタイトルになります。
           </span>
         </label>
-        <input
-          name="meetingDate"
-          type="date"
-          defaultValue={today}
-          required
-          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground"
-        />
-        <textarea
-          name="content"
-          placeholder="議事録の内容"
-          required
-          rows={16}
-          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
-        />
+
+        <MarkdownEditor name="content" />
+
         <button
           type="submit"
           className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
@@ -143,6 +126,6 @@ export default async function NewMinutePage({
           保存
         </button>
       </form>
-    </MinutesLayout>
+    </DocumentsLayout>
   );
 }

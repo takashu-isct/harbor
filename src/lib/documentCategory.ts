@@ -1,4 +1,4 @@
-// 議事録のカテゴリはesaのような "ロール名/サブカテゴリ/..." というスラッシュ区切りの階層。
+// 文書のカテゴリはesaのような "ロール名/サブカテゴリ/..." というスラッシュ区切りの階層。
 // 先頭のセグメントは必ず団体のロール名と一致させ、書き込み・閲覧の範囲をロールに紐づける。
 
 export function splitCategory(category: string): string[] {
@@ -50,7 +50,7 @@ export type CategoryNode = {
   count: number;
 };
 
-// サイドバー用のツリー構造。rootsは常にフォルダとして表示する(議事録が0件でも表示させたいため)。
+// サイドバー用のツリー構造。rootsは常にフォルダとして表示する(文書が0件でも表示させたいため)。
 export function buildCategoryTree(roots: string[], allCategories: string[]): CategoryNode[] {
   function countUnder(prefix: string[]): number {
     return allCategories.filter((c) => isUnderPrefix(c, prefix)).length;
