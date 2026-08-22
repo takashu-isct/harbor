@@ -569,6 +569,25 @@ function generatePermissionChangeList() {
 // ④ 権限変更を適用する(元のスクリプトとほぼ同じ。Browser.msgBoxを外しただけ)
 // ===========================================================================
 
+/**
+ * 特定の人にフォルダーの共有権限を付与する。
+ * 「サービス」に追加した「Drive API」詳細サービスのバージョンによって、
+ * 使えるメソッド名・パラメータ名がv2(Permissions.insert / value)と
+ * v3(Permissions.create / emailAddress)で異なるため、実際に使える方を
+ * 自動判定して呼び分ける。
+ */
+function grantDrivePermission_(folderId, email, role) {
+  if (typeof Drive.Permissions.insert === 'function') {
+    // Drive API v2
+    const resource = { role: role, type: 'user', value: email };
+    Drive.Permissions.insert(resource, folderId, { sendNotificationEmails: false, supportsAllDrives: true });
+  } else {
+    // Drive API v3
+    const resource = { role: role, type: 'user', emailAddress: email };
+    Drive.Permissions.create(resource, folderId, { sendNotificationEmail: false, supportsAllDrives: true });
+  }
+}
+
 function executePermissionChanges() {
   deleteTriggers_('executePermissionChanges');
 
@@ -633,8 +652,7 @@ function executePermissionChanges() {
           folder.setSharing(accessType, permissionType);
           resultMsg = `リンク共有設定: ${role}`;
         } else {
-          const resource = { role: role, type: 'user', value: email };
-          Drive.Permissions.insert(resource, folderId, { sendNotificationEmails: false, supportsAllDrives: true });
+          grantDrivePermission_(folderId, email, role);
           resultMsg = `権限${action}: ${email} (${role})`;
         }
       }
