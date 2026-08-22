@@ -14,18 +14,28 @@ function sanitizeCell(value: string): string {
   return /^[=+\-@]/.test(value) ? `'${value}` : value;
 }
 
+// JWTクライアントを毎回作り直すと、Googleが発行するアクセストークンの使い回しが
+// 効かず、シートを読み書きするたびに認証をやり直すことになって非常に遅くなる。
+// モジュールスコープで1つだけ作って使い回す(サーバーレス関数のウォーム実行間でも共有される)。
+let sheetsClient: ReturnType<typeof google.sheets> | null = null;
 function getSheetsClient() {
-  const auth = new google.auth.JWT({
-    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-  return google.sheets({ version: "v4", auth });
+  if (!sheetsClient) {
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+    });
+    sheetsClient = google.sheets({ version: "v4", auth });
+  }
+  return sheetsClient;
 }
 
 async function getSheetIdByTitle(title: string): Promise<number> {
   const sheets = getSheetsClient();
-  const res = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const res = await sheets.spreadsheets.get({
+    spreadsheetId: SHEET_ID,
+    fields: "sheets.properties",
+  });
   const sheet = res.data.sheets?.find((s) => s.properties?.title === title);
   if (sheet?.properties?.sheetId == null) {
     throw new Error(`sheet not found: ${title}`);
@@ -751,7 +761,10 @@ export async function addLedgerEntry(params: {
 // (gas/harbor-drive-sync.gsで採用した「自己インストール」と同じ考え方)。
 async function ensureSheetTab(title: string, headers: string[]): Promise<void> {
   const sheets = getSheetsClient();
-  const meta = await sheets.spreadsheets.get({ spreadsheetId: SHEET_ID });
+  const meta = await sheets.spreadsheets.get({
+    spreadsheetId: SHEET_ID,
+    fields: "sheets.properties",
+  });
   if (meta.data.sheets?.some((s) => s.properties?.title === title)) return;
   await sheets.spreadsheets.batchUpdate({
     spreadsheetId: SHEET_ID,
