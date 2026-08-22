@@ -16,6 +16,9 @@ import {
   updateGroupMemberRoles,
 } from "@/lib/sheet";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { AddMemberModal } from "@/components/AddMemberModal";
+import { MemberRoleForm } from "@/components/MemberRoleForm";
+import { UnsavedChangesProvider } from "@/components/UnsavedChangesGuard";
 
 async function requireAdmin(id: string) {
   const session = await auth();
@@ -141,19 +144,29 @@ export default async function MembersPage({
   }
 
   return (
+    <UnsavedChangesProvider>
     <div className="flex flex-1 flex-col gap-8 px-6 py-6">
       <div>
         <Link href={`/org/${id}`} className="text-sm text-muted underline">
           ← {group?.name ?? id} に戻る
         </Link>
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <span aria-hidden>👥</span>
             メンバー管理
           </h1>
-          <Link href={`/org/${id}/roles`} className="text-sm text-muted underline">
-            ロール管理へ
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={`/org/${id}/members/csv`}
+              className="text-sm text-muted underline"
+            >
+              CSVダウンロード
+            </a>
+            <Link href={`/org/${id}/roles`} className="text-sm text-muted underline">
+              ロール管理へ
+            </Link>
+            <AddMemberModal action={addMember} roles={roles} />
+          </div>
         </div>
       </div>
 
@@ -239,29 +252,12 @@ export default async function MembersPage({
                 <td className="py-2">{m.name}</td>
                 <td className="py-2">{m.email}</td>
                 <td className="py-2">
-                  <form action={changeRoles} className="flex flex-wrap items-center gap-2">
-                    <input type="hidden" name="email" value={m.email} />
-                    {roles.map((r) => (
-                      <label
-                        key={r.name}
-                        className="flex items-center gap-1 text-xs text-foreground"
-                      >
-                        <input
-                          type="checkbox"
-                          name="roles"
-                          value={r.name}
-                          defaultChecked={m.roles.includes(r.name)}
-                        />
-                        {r.name}
-                      </label>
-                    ))}
-                    <button
-                      type="submit"
-                      className="rounded-none bg-surface px-2 py-1 text-xs text-muted underline"
-                    >
-                      変更
-                    </button>
-                  </form>
+                  <MemberRoleForm
+                    email={m.email}
+                    roles={roles}
+                    memberRoles={m.roles}
+                    action={changeRoles}
+                  />
                 </td>
                 <td className="py-2">
                   <form action={deleteMember}>
@@ -279,45 +275,7 @@ export default async function MembersPage({
           </tbody>
         </table>
       </section>
-
-      <form action={addMember} className="flex max-w-md flex-col gap-3">
-        <h2 className="text-sm text-muted">メンバーを追加</h2>
-        <input
-          name="email"
-          type="email"
-          placeholder="メールアドレス"
-          required
-          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
-        />
-        <input
-          name="name"
-          type="text"
-          placeholder="氏名"
-          required
-          className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
-        />
-        <div className="flex flex-col gap-2">
-          <span className="text-sm text-muted">ロール</span>
-          {roles.map((r) => (
-            <label key={r.name} className="flex items-center gap-2 text-sm text-muted">
-              <input
-                type="checkbox"
-                name="roles"
-                value={r.name}
-                defaultChecked={r.name === "メンバー"}
-              />
-              {r.name}
-              {r.isAdmin && <span className="text-xs">(管理者権限)</span>}
-            </label>
-          ))}
-        </div>
-        <button
-          type="submit"
-          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-        >
-          追加
-        </button>
-      </form>
     </div>
+    </UnsavedChangesProvider>
   );
 }
