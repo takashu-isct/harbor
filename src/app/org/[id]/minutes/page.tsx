@@ -6,7 +6,7 @@ import {
   findMinutesByGroup,
   hasAdminRole,
 } from "@/lib/sheet";
-import { canAccessCategory } from "@/lib/minutesCategory";
+import { canAccessCategory, timeAgo } from "@/lib/minutesCategory";
 import { MinutesLayout } from "@/components/MinutesLayout";
 
 export default async function MinutesPage({
@@ -58,7 +58,9 @@ export default async function MinutesPage({
                   </span>
                   <span className="text-muted">{m.meetingDate}</span>
                   <span className="text-foreground">{m.title}</span>
-                  <span className="ml-auto text-xs text-muted">{m.authorName}</span>
+                  <span className="ml-auto text-xs text-muted">
+                    {m.authorName} ・ {timeAgo(m.createdAt)}
+                  </span>
                 </span>
               </Link>
             </li>

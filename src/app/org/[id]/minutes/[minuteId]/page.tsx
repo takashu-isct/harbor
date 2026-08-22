@@ -6,7 +6,7 @@ import {
   findMinuteById,
   hasAdminRole,
 } from "@/lib/sheet";
-import { canAccessCategory, splitCategory } from "@/lib/minutesCategory";
+import { canAccessCategory, splitCategory, timeAgo } from "@/lib/minutesCategory";
 import { MinutesLayout } from "@/components/MinutesLayout";
 
 export default async function MinuteDetailPage({
@@ -55,7 +55,7 @@ export default async function MinuteDetailPage({
           <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
             {minute.authorName.slice(0, 1)}
           </span>
-          {minute.meetingDate} ・ {minute.authorName}
+          {minute.meetingDate} ・ {minute.authorName} ・ {timeAgo(minute.createdAt)}
         </p>
       </div>
 

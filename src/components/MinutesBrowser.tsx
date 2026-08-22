@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { findMinutesByGroup } from "@/lib/sheet";
-import { childFolders, joinCategory, splitCategory } from "@/lib/minutesCategory";
+import {
+  childFolders,
+  isUnderPrefix,
+  joinCategory,
+  splitCategory,
+  timeAgo,
+} from "@/lib/minutesCategory";
 
 // prefix は必ず1階層以上(先頭はロール名)。呼び出し側でアクセス権を確認してから使うこと。
 export async function MinutesBrowser({
@@ -16,16 +22,38 @@ export async function MinutesBrowser({
     prefix
   );
   const prefixPath = joinCategory(prefix);
-  const leaves = allMinutes.filter(
-    (m) => joinCategory(splitCategory(m.category)) === prefixPath
-  );
+  // esaと同じく、このフォルダ配下(サブフォルダ含む)の議事録を全部表示する
+  const items = allMinutes
+    .filter((m) => isUnderPrefix(m.category, prefix))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
           <span aria-hidden>📁</span>
-          {prefixPath}
+          <span className="flex flex-wrap items-center gap-1">
+            <Link href={`/org/${groupId}/minutes`} className="hover:underline">
+              議事録
+            </Link>
+            {prefix.map((seg, i) => (
+              <span key={i} className="flex items-center gap-1">
+                <span className="text-muted">/</span>
+                <Link
+                  href={`/org/${groupId}/minutes/category/${prefix
+                    .slice(0, i + 1)
+                    .map(encodeURIComponent)
+                    .join("/")}`}
+                  className="hover:underline"
+                >
+                  {seg}
+                </Link>
+              </span>
+            ))}
+          </span>
+          {items.length > 0 && (
+            <span className="text-sm font-normal text-muted">{items.length}</span>
+          )}
         </h1>
         <Link
           href={`/org/${groupId}/minutes/new?category=${encodeURIComponent(prefixPath)}`}
@@ -58,27 +86,37 @@ export async function MinutesBrowser({
 
       <section>
         {folders.length > 0 && <h2 className="mb-2 text-xs text-muted">議事録</h2>}
-        {leaves.length === 0 ? (
+        {items.length === 0 ? (
           folders.length === 0 && (
             <p className="text-sm text-muted">まだ議事録がありません。</p>
           )
         ) : (
           <ul className="flex max-w-2xl flex-col gap-2">
-            {leaves.map((m) => (
-              <li key={m.id}>
-                <Link
-                  href={`/org/${groupId}/minutes/${m.id}`}
-                  className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
-                >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
-                    {m.authorName.slice(0, 1)}
-                  </span>
-                  <span className="text-muted">{m.meetingDate}</span>
-                  <span className="text-foreground">{m.title}</span>
-                  <span className="ml-auto text-xs text-muted">{m.authorName}</span>
-                </Link>
-              </li>
-            ))}
+            {items.map((m) => {
+              const subSegs = splitCategory(m.category).slice(prefix.length);
+              return (
+                <li key={m.id}>
+                  <Link
+                    href={`/org/${groupId}/minutes/${m.id}`}
+                    className="flex flex-col gap-1 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+                  >
+                    {subSegs.length > 0 && (
+                      <span className="text-xs text-muted">{subSegs.join("/")}</span>
+                    )}
+                    <span className="flex flex-wrap items-center gap-3">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
+                        {m.authorName.slice(0, 1)}
+                      </span>
+                      <span className="text-muted">{m.meetingDate}</span>
+                      <span className="text-foreground">{m.title}</span>
+                      <span className="ml-auto text-xs text-muted">
+                        {m.authorName} ・ {timeAgo(m.createdAt)}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

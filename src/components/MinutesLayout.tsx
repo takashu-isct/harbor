@@ -28,11 +28,15 @@ function TreeNode({
   const label = (
     <Link
       href={href}
-      className={`block truncate px-2 py-1 text-sm transition hover:bg-surface ${
+      className={`flex items-center gap-1 truncate px-2 py-1 text-sm transition hover:bg-surface ${
         isActive ? "bg-surface text-accent" : "text-foreground"
       }`}
     >
-      <span aria-hidden>📁</span> {node.name}
+      <span aria-hidden>📁</span>
+      <span className="truncate">{node.name}</span>
+      {node.count > 0 && (
+        <span className="ml-auto shrink-0 text-xs text-muted">{node.count}</span>
+      )}
     </Link>
   );
 
