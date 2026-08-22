@@ -1,10 +1,13 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { Moon, Settings, Sun } from "lucide-react";
 import { auth } from "@/auth";
 import { findPersonByEmail, updatePersonHiddenTools } from "@/lib/sheet";
 import { PERSONAL_TOOLS } from "@/lib/tools";
+import { BackLink } from "@/components/BackLink";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnPrimary } from "@/lib/styles";
 
 export default async function PersonalSettingsPage() {
   const session = await auth();
@@ -45,11 +48,9 @@ export default async function PersonalSettingsPage() {
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <Link href="/me" className="text-sm text-muted underline">
-          ← 個人ホームに戻る
-        </Link>
+        <BackLink href="/me">個人ホームに戻る</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>⚙️</span>
+          <Settings className="h-5 w-5" aria-hidden />
           表示設定
         </h1>
         <p className="mt-1 text-sm text-muted">
@@ -60,32 +61,27 @@ export default async function PersonalSettingsPage() {
       <section>
         <h2 className="mb-3 text-sm text-muted">テーマ</h2>
         <form action={saveTheme} className="flex max-w-md flex-col gap-3">
-          <label className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground">
+          <label className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground transition-colors duration-150 hover:brightness-110">
             <input
               type="radio"
               name="theme"
               value="dark"
               defaultChecked={currentTheme === "dark"}
             />
-            <span aria-hidden>🌙</span>
+            <Moon className="h-4 w-4" aria-hidden />
             ダークモード
           </label>
-          <label className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground">
+          <label className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground transition-colors duration-150 hover:brightness-110">
             <input
               type="radio"
               name="theme"
               value="light"
               defaultChecked={currentTheme === "light"}
             />
-            <span aria-hidden>☀️</span>
+            <Sun className="h-4 w-4" aria-hidden />
             ライトモード
           </label>
-          <button
-            type="submit"
-            className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            切り替える
-          </button>
+          <SubmitButton className={`self-start ${btnPrimary}`}>切り替える</SubmitButton>
         </form>
       </section>
 
@@ -95,23 +91,18 @@ export default async function PersonalSettingsPage() {
           {PERSONAL_TOOLS.map((t) => (
             <label
               key={t.id}
-              className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground"
+              className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground transition-colors duration-150 hover:brightness-110"
             >
               <input
                 type="checkbox"
                 name={t.id}
                 defaultChecked={!hidden.includes(t.id)}
               />
-              <span aria-hidden>{t.icon}</span>
+              <t.icon className="h-4 w-4" aria-hidden />
               {t.label}
             </label>
           ))}
-          <button
-            type="submit"
-            className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            保存
-          </button>
+          <SubmitButton className={`self-start ${btnPrimary}`}>保存</SubmitButton>
         </form>
       </section>
     </div>

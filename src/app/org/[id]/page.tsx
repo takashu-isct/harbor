@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { ExternalLink, Settings, Users, UserCog, Wrench } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
@@ -13,6 +14,7 @@ import {
 import { ORG_TOOLS } from "@/lib/tools";
 import { AddTile, AppTile } from "@/components/AppTile";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
+import { linkMuted, linkMutedXs } from "@/lib/styles";
 
 function faviconFor(url: string): string | undefined {
   try {
@@ -76,7 +78,7 @@ export default async function OrgHome({
               await signOut({ redirectTo: "/login" });
             }}
           >
-            <button type="submit" className="text-sm text-muted underline">
+            <button type="submit" className={linkMuted}>
               ログアウト
             </button>
           </form>
@@ -88,11 +90,9 @@ export default async function OrgHome({
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm text-muted">CREW Harbor</h2>
             {isAdmin && (
-              <Link
-                href={`/org/${id}/settings`}
-                className="text-xs text-muted underline"
-              >
-                ⚙️ 表示設定
+              <Link href={`/org/${id}/settings`} className={linkMutedXs}>
+                <Settings className="h-3.5 w-3.5" aria-hidden />
+                表示設定
               </Link>
             )}
           </div>
@@ -109,18 +109,18 @@ export default async function OrgHome({
             {isAdmin && (
               <AppTile
                 href={`/org/${id}/members`}
-                icon="👥"
+                icon={Users}
                 label="メンバー管理"
                 badge={pendingCount || undefined}
               />
             )}
             {isAdmin && (
-              <AppTile href={`/org/${id}/roles`} icon="🎭" label="ロール管理" />
+              <AppTile href={`/org/${id}/roles`} icon={UserCog} label="ロール管理" />
             )}
             {harborAdmin && (
               <AppTile
                 href="/admin"
-                icon="🛠️"
+                icon={Wrench}
                 label="Harbor管理"
                 badge={foundingPendingCount || undefined}
               />
@@ -132,11 +132,9 @@ export default async function OrgHome({
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm text-muted">外部リンク</h2>
             {isAdmin && (
-              <Link
-                href={`/org/${id}/links`}
-                className="text-xs text-muted underline"
-              >
-                ⚙️ リンク管理
+              <Link href={`/org/${id}/links`} className={linkMutedXs}>
+                <Settings className="h-3.5 w-3.5" aria-hidden />
+                リンク管理
               </Link>
             )}
           </div>
@@ -146,7 +144,7 @@ export default async function OrgHome({
                 key={l.url}
                 href={l.url}
                 external
-                icon="🔗"
+                icon={ExternalLink}
                 iconUrl={l.iconUrl || faviconFor(l.url)}
                 label={l.label}
                 note="別ログイン"

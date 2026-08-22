@@ -1,12 +1,10 @@
-import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 
 export default function TermsPage() {
   return (
     <div className="mx-auto flex max-w-2xl flex-1 flex-col gap-6 px-6 py-10">
       <div>
-        <Link href="/login" className="text-sm text-muted underline">
-          ← ログイン画面に戻る
-        </Link>
+        <BackLink href="/login">ログイン画面に戻る</BackLink>
         <h1 className="mt-2 text-xl font-semibold text-foreground">
           CREW Harbor 利用規約
         </h1>

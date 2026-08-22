@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { FileText, Folder, FolderOpen } from "lucide-react";
 import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
@@ -9,6 +10,7 @@ import {
   hasAdminRole,
 } from "@/lib/sheet";
 import { buildCategoryTree, type CategoryNode } from "@/lib/documentCategory";
+import { BackLink } from "./BackLink";
 
 function TreeNode({
   groupId,
@@ -24,15 +26,16 @@ function TreeNode({
     .join("/")}`;
   const isActive = node.path.join("/") === activePath.join("/");
   const containsActive = node.path.every((p, i) => activePath[i] === p);
+  const FolderIcon = isActive || containsActive ? FolderOpen : Folder;
 
   const label = (
     <Link
       href={href}
-      className={`flex items-center gap-1 truncate px-2 py-1 text-sm transition hover:bg-surface ${
+      className={`flex items-center gap-1 truncate px-2 py-1 text-sm transition-colors duration-150 hover:bg-surface ${
         isActive ? "bg-surface text-accent" : "text-foreground"
       }`}
     >
-      <span aria-hidden>📁</span>
+      <FolderIcon className="h-4 w-4 shrink-0" aria-hidden />
       <span className="truncate">{node.name}</span>
       {node.count > 0 && (
         <span className="ml-auto shrink-0 text-xs text-muted">{node.count}</span>
@@ -89,11 +92,9 @@ export async function DocumentsLayout({
   return (
     <div className="flex flex-1 flex-col md:flex-row">
       <aside className="w-full shrink-0 border-b border-surface px-4 py-6 md:w-64 md:border-b-0 md:border-r">
-        <Link href={`/org/${groupId}`} className="text-sm text-muted underline">
-          ← {group?.name ?? groupId}
-        </Link>
+        <BackLink href={`/org/${groupId}`}>{group?.name ?? groupId}</BackLink>
         <h2 className="mb-2 mt-4 flex items-center gap-2 text-sm font-semibold text-foreground">
-          <span aria-hidden>📝</span>
+          <FileText className="h-4 w-4" aria-hidden />
           文書管理
         </h2>
         <nav className="flex flex-col gap-0.5">

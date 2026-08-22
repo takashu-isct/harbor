@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Wallet } from "lucide-react";
 import { auth } from "@/auth";
 import {
   addLedgerEntry,
@@ -8,6 +8,9 @@ import {
   findGroupById,
   findLedgerEntries,
 } from "@/lib/sheet";
+import { BackLink } from "@/components/BackLink";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnPrimary } from "@/lib/styles";
 
 export default async function AccountingPage({
   params,
@@ -66,11 +69,9 @@ export default async function AccountingPage({
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <Link href={`/org/${id}`} className="text-sm text-muted underline">
-          ← {group?.name ?? id} に戻る
-        </Link>
+        <BackLink href={`/org/${id}`}>{group?.name ?? id} に戻る</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>💰</span>
+          <Wallet className="h-5 w-5" aria-hidden />
           会計
         </h1>
       </div>
@@ -149,12 +150,7 @@ export default async function AccountingPage({
           <option value="収入">収入</option>
           <option value="支出">支出</option>
         </select>
-        <button
-          type="submit"
-          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-        >
-          追加
-        </button>
+        <SubmitButton className={`self-start ${btnPrimary}`}>追加</SubmitButton>
       </form>
     </div>
   );

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { FileText, Folder, SquarePen } from "lucide-react";
 import { findDocumentsByGroup } from "@/lib/sheet";
 import { childFolders, joinCategory, splitCategory, timeAgo } from "@/lib/documentCategory";
+import { btnPrimary, btnSecondary, linkMutedXs, tileHover } from "@/lib/styles";
 
 // prefix は必ず1階層以上(先頭はロール名)。呼び出し側でアクセス権を確認してから使うこと。
 // エクスプローラーのフォルダのように、直下(このフォルダ自体)の中身だけを表示する。
@@ -27,7 +29,7 @@ export async function DocumentsBrowser({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-          <span aria-hidden>📁</span>
+          <Folder className="h-5 w-5 shrink-0" aria-hidden />
           <span className="flex flex-wrap items-center gap-1">
             <Link href={`/org/${groupId}/documents`} className="hover:underline">
               文書管理
@@ -52,13 +54,13 @@ export async function DocumentsBrowser({
           <div className="flex flex-wrap gap-2">
             <Link
               href={`/org/${groupId}/documents/new?category=${encodeURIComponent(prefixPath)}&fixed=1&kind=folder`}
-              className="rounded-none bg-surface px-4 py-2 text-sm font-medium text-foreground transition hover:brightness-110"
+              className={btnSecondary}
             >
               フォルダーを作成
             </Link>
             <Link
               href={`/org/${groupId}/documents/new?category=${encodeURIComponent(prefixPath)}&fixed=1&kind=document`}
-              className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
+              className={btnPrimary}
             >
               文書を作成
             </Link>
@@ -76,9 +78,9 @@ export async function DocumentsBrowser({
                 href={`/org/${groupId}/documents/category/${[...prefix, f]
                   .map(encodeURIComponent)
                   .join("/")}`}
-                className="flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground transition hover:brightness-110"
+                className={`flex items-center gap-3 bg-surface px-4 py-3 text-sm text-foreground ${tileHover}`}
               >
-                <span aria-hidden>📁</span>
+                <Folder className="h-4 w-4 shrink-0" aria-hidden />
                 {f}
               </Link>
             </li>
@@ -86,13 +88,13 @@ export async function DocumentsBrowser({
           {documents.map((m) => (
             <li
               key={m.id}
-              className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+              className={`flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm ${tileHover}`}
             >
               <Link
                 href={`/org/${groupId}/documents/${m.id}`}
                 className="flex flex-1 flex-wrap items-center gap-3"
               >
-                <span aria-hidden>📄</span>
+                <FileText className="h-4 w-4 shrink-0" aria-hidden />
                 <span className="text-foreground">{m.title}</span>
                 <span className="ml-auto flex items-center gap-2 text-xs text-muted">
                   <span className="flex h-5 w-5 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
@@ -104,9 +106,10 @@ export async function DocumentsBrowser({
               {canWrite && (
                 <Link
                   href={`/org/${groupId}/documents/${m.id}/edit`}
-                  className="shrink-0 text-xs text-muted underline hover:text-foreground"
+                  className={`shrink-0 ${linkMutedXs}`}
                 >
-                  ✏️ 編集
+                  <SquarePen className="h-3.5 w-3.5" aria-hidden />
+                  編集
                 </Link>
               )}
             </li>

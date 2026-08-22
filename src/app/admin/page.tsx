@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { ClipboardList, Wrench } from "lucide-react";
 import { auth } from "@/auth";
 import {
   addGroup,
@@ -11,6 +11,9 @@ import {
   findGroupById,
   isHarborAdmin,
 } from "@/lib/sheet";
+import { BackLink } from "@/components/BackLink";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnDangerSmall, btnPrimarySmall } from "@/lib/styles";
 
 async function requireHarborAdmin() {
   const session = await auth();
@@ -76,11 +79,9 @@ export default async function HarborAdminPage() {
   return (
     <div className="flex flex-1 flex-col gap-8 px-6 py-6">
       <div>
-        <Link href="/me" className="text-sm text-muted underline">
-          ← プロフィールに戻る
-        </Link>
+        <BackLink href="/me">プロフィールに戻る</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>🛠️</span>
+          <Wrench className="h-5 w-5" aria-hidden />
           Harbor管理
         </h1>
         <p className="mt-1 text-sm text-muted">
@@ -90,7 +91,7 @@ export default async function HarborAdminPage() {
 
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-sm text-muted">
-          <span aria-hidden>📋</span>
+          <ClipboardList className="h-4 w-4" aria-hidden />
           タスク・団体の設立申請({pending.length}件)
         </h2>
         {pending.length === 0 ? (
@@ -127,22 +128,12 @@ export default async function HarborAdminPage() {
                     placeholder="団体ID(半角英小文字・数字・ハイフン、例: tea-club)"
                     className="rounded-none bg-background px-3 py-1.5 text-xs text-foreground placeholder:text-muted"
                   />
-                  <button
-                    type="submit"
-                    className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
-                  >
-                    承認して団体を作成
-                  </button>
+                  <SubmitButton className={btnPrimarySmall}>承認して団体を作成</SubmitButton>
                 </form>
                 <form action={rejectFounding}>
                   <input type="hidden" name="email" value={a.email} />
                   <input type="hidden" name="submittedAt" value={a.submittedAt} />
-                  <button
-                    type="submit"
-                    className="rounded-none bg-danger/20 px-3 py-1.5 text-xs font-medium text-danger transition hover:brightness-110"
-                  >
-                    却下
-                  </button>
+                  <SubmitButton className={btnDangerSmall}>却下</SubmitButton>
                 </form>
               </li>
             ))}

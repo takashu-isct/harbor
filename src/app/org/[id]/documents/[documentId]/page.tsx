@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { FileText, SquarePen } from "lucide-react";
 import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
@@ -11,6 +12,8 @@ import {
 import { canAccessCategory, canAccessTop, splitCategory, timeAgo } from "@/lib/documentCategory";
 import { DocumentsLayout } from "@/components/DocumentsLayout";
 import { proseClass } from "@/lib/markdownProse";
+import { btnPrimary } from "@/lib/styles";
+import { BackLink } from "@/components/BackLink";
 
 export default async function DocumentDetailPage({
   params,
@@ -46,14 +49,11 @@ export default async function DocumentDetailPage({
     <DocumentsLayout groupId={id} activePath={categoryPath}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link
-            href={`/org/${id}/documents/category/${categoryPath.map(encodeURIComponent).join("/")}`}
-            className="text-sm text-muted underline"
-          >
-            ← {doc.category}
-          </Link>
+          <BackLink href={`/org/${id}/documents/category/${categoryPath.map(encodeURIComponent).join("/")}`}>
+            {doc.category}
+          </BackLink>
           <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-            <span aria-hidden>📄</span>
+            <FileText className="h-5 w-5" aria-hidden />
             {doc.title}
           </h1>
           <p className="mt-1 flex items-center gap-2 text-sm text-muted">
@@ -64,11 +64,9 @@ export default async function DocumentDetailPage({
           </p>
         </div>
         {canWrite && (
-          <Link
-            href={`/org/${id}/documents/${documentId}/edit`}
-            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            ✏️ 編集
+          <Link href={`/org/${id}/documents/${documentId}/edit`} className={btnPrimary}>
+            <SquarePen className="h-4 w-4" aria-hidden />
+            編集
           </Link>
         )}
       </div>

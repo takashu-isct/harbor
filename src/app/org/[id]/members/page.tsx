@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { ClipboardList, Users } from "lucide-react";
 import { auth } from "@/auth";
 import {
   addGroupMember,
@@ -19,6 +20,9 @@ import { ConfirmButton } from "@/components/ConfirmButton";
 import { AddMemberModal } from "@/components/AddMemberModal";
 import { MemberRoleForm } from "@/components/MemberRoleForm";
 import { UnsavedChangesProvider } from "@/components/UnsavedChangesGuard";
+import { BackLink } from "@/components/BackLink";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnDangerSmall, btnDangerXs, btnPrimarySmall, linkMuted } from "@/lib/styles";
 
 async function requireAdmin(id: string) {
   const session = await auth();
@@ -151,22 +155,17 @@ export default async function MembersPage({
     <UnsavedChangesProvider>
     <div className="flex flex-1 flex-col gap-8 px-6 py-6">
       <div>
-        <Link href={`/org/${id}`} className="text-sm text-muted underline">
-          ← {group?.name ?? id} に戻る
-        </Link>
+        <BackLink href={`/org/${id}`}>{group?.name ?? id} に戻る</BackLink>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <h1 className="flex items-center gap-2 text-xl font-semibold text-foreground">
-            <span aria-hidden>👥</span>
+            <Users className="h-5 w-5" aria-hidden />
             メンバー管理
           </h1>
           <div className="flex flex-wrap items-center gap-3">
-            <a
-              href={`/org/${id}/members/csv`}
-              className="text-sm text-muted underline"
-            >
+            <a href={`/org/${id}/members/csv`} className={linkMuted}>
               CSVダウンロード
             </a>
-            <Link href={`/org/${id}/roles`} className="text-sm text-muted underline">
+            <Link href={`/org/${id}/roles`} className={linkMuted}>
               ロール管理へ
             </Link>
             <AddMemberModal action={addMember} roles={roles} />
@@ -177,7 +176,7 @@ export default async function MembersPage({
       {pendingApplications.length > 0 && (
         <section>
           <h2 className="mb-3 flex items-center gap-2 text-sm text-muted">
-            <span aria-hidden>📋</span>
+            <ClipboardList className="h-4 w-4" aria-hidden />
             タスク・承認待ちの申請({pendingApplications.length}件)
           </h2>
           <ul className="flex flex-col gap-3">
@@ -220,22 +219,12 @@ export default async function MembersPage({
                       </label>
                     );
                   })}
-                  <button
-                    type="submit"
-                    className="rounded-none bg-accent px-3 py-1.5 text-xs font-medium text-white transition hover:brightness-110"
-                  >
-                    承認
-                  </button>
+                  <SubmitButton className={btnPrimarySmall}>承認</SubmitButton>
                 </form>
                 <form action={rejectApplication}>
                   <input type="hidden" name="email" value={a.email} />
                   <input type="hidden" name="submittedAt" value={a.submittedAt} />
-                  <button
-                    type="submit"
-                    className="rounded-none bg-danger/20 px-3 py-1.5 text-xs font-medium text-danger transition hover:brightness-110"
-                  >
-                    却下
-                  </button>
+                  <SubmitButton className={btnDangerSmall}>却下</SubmitButton>
                 </form>
               </li>
             ))}
@@ -274,7 +263,7 @@ export default async function MembersPage({
                     <input type="hidden" name="email" value={m.email} />
                     <ConfirmButton
                       message={`${m.name || m.email}をこの団体から削除します。よろしいですか?`}
-                      className="rounded-none bg-danger/20 px-2 py-1 text-xs text-danger"
+                      className={btnDangerXs}
                     >
                       削除
                     </ConfirmButton>

@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { proseClass } from "@/lib/markdownProse";
 import { useUnsavedChangesGuard } from "./UnsavedChangesGuard";
+
+// プレビューのMarkdown解析は入力のたびに毎回走らせず、タイピングが止まってから
+// 少し待って反映する(高速に打ち続けている間は再計算しない)。
+const PREVIEW_DEBOUNCE_MS = 250;
 
 export function MarkdownEditor({
   name,
@@ -15,7 +19,13 @@ export function MarkdownEditor({
 }) {
   const initial = defaultValue ?? "";
   const [value, setValue] = useState(initial);
+  const [previewValue, setPreviewValue] = useState(initial);
   useUnsavedChangesGuard("document-content", value !== initial);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setPreviewValue(value), PREVIEW_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [value]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-1">
@@ -33,8 +43,8 @@ export function MarkdownEditor({
         <div
           className={`min-h-64 flex-1 overflow-auto rounded-none bg-surface px-3 py-2 text-sm text-foreground ${proseClass}`}
         >
-          {value.trim() ? (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
+          {previewValue.trim() ? (
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{previewValue}</ReactMarkdown>
           ) : (
             <p className="text-muted">プレビューがここに表示されます</p>
           )}

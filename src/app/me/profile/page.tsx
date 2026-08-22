@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CircleUser, FileText, Tag } from "lucide-react";
 import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
@@ -7,6 +8,7 @@ import {
   findGroupById,
   findPersonByEmail,
 } from "@/lib/sheet";
+import { BackLink } from "@/components/BackLink";
 
 export default async function ProfileDetailPage() {
   const session = await auth();
@@ -30,11 +32,9 @@ export default async function ProfileDetailPage() {
   return (
     <div className="flex flex-1 flex-col gap-8 px-6 py-6">
       <div>
-        <Link href="/me" className="text-sm text-muted underline">
-          ← 個人ホームに戻る
-        </Link>
+        <BackLink href="/me">個人ホームに戻る</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>🙍</span>
+          <CircleUser className="h-5 w-5" aria-hidden />
           プロフィール
         </h1>
       </div>
@@ -52,7 +52,7 @@ export default async function ProfileDetailPage() {
 
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-foreground">
-          <span aria-hidden>🏷️</span>
+          <Tag className="h-4 w-4" aria-hidden />
           所属団体
         </h2>
         {groups.length === 0 ? (
@@ -78,7 +78,7 @@ export default async function ProfileDetailPage() {
 
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-foreground">
-          <span aria-hidden>📝</span>
+          <FileText className="h-4 w-4" aria-hidden />
           自分の申請一覧
         </h2>
         {applications.length === 0 ? (

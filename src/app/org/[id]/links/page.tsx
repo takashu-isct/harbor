@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Link2 } from "lucide-react";
 import { auth } from "@/auth";
 import {
   addLink,
@@ -11,6 +11,9 @@ import {
   removeLink,
 } from "@/lib/sheet";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { SubmitButton } from "@/components/SubmitButton";
+import { BackLink } from "@/components/BackLink";
+import { btnDangerXs, btnPrimary } from "@/lib/styles";
 
 function isSafeHttpUrl(value: string): boolean {
   try {
@@ -76,11 +79,9 @@ export default async function LinksPage({
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <Link href={`/org/${id}`} className="text-sm text-muted underline">
-          ← {group?.name ?? id} に戻る
-        </Link>
+        <BackLink href={`/org/${id}`}>{group?.name ?? id} に戻る</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>🔗</span>
+          <Link2 className="h-5 w-5" aria-hidden />
           外部リンクを追加
         </h1>
         <p className="mt-1 text-sm text-muted">
@@ -113,12 +114,7 @@ export default async function LinksPage({
         <p className="text-xs text-muted">
           アイコン画像URLを入力しない場合は、リンク先サイトのアイコンを自動で表示します。
         </p>
-        <button
-          type="submit"
-          className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-        >
-          追加
-        </button>
+        <SubmitButton className={`self-start ${btnPrimary}`}>追加</SubmitButton>
       </form>
 
       <section>
@@ -148,7 +144,7 @@ export default async function LinksPage({
                       <input type="hidden" name="url" value={l.url} />
                       <ConfirmButton
                         message={`「${l.label}」を削除します。よろしいですか?`}
-                        className="rounded-none bg-danger/20 px-2 py-1 text-xs text-danger"
+                        className={btnDangerXs}
                       >
                         削除
                       </ConfirmButton>

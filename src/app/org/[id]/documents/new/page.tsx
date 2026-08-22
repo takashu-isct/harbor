@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { FileText, Folder } from "lucide-react";
 import { auth } from "@/auth";
 import {
   addDocument,
@@ -11,6 +12,8 @@ import { canAccessTop, joinCategory, splitCategory } from "@/lib/documentCategor
 import { DocumentsLayout } from "@/components/DocumentsLayout";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { UnsavedChangesProvider } from "@/components/UnsavedChangesGuard";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnPrimary, linkMuted } from "@/lib/styles";
 
 export default async function NewDocumentPage({
   params,
@@ -119,7 +122,11 @@ export default async function NewDocumentPage({
     <UnsavedChangesProvider>
     <DocumentsLayout groupId={id} activePath={activePath}>
       <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-        <span aria-hidden>{kind === "folder" ? "📁" : "📝"}</span>
+        {kind === "folder" ? (
+          <Folder className="h-5 w-5" aria-hidden />
+        ) : (
+          <FileText className="h-5 w-5" aria-hidden />
+        )}
         {kind === "folder" ? "フォルダーを作成" : "文書を作成"}
         {fixedSegs && (
           <span className="text-sm font-normal text-muted">({joinCategory(fixedSegs)} に追加)</span>
@@ -130,7 +137,7 @@ export default async function NewDocumentPage({
         <div className="flex gap-2 text-sm">
           <Link
             href={`${kindSwitchBase}${kindSwitchBase.includes("?") ? "&" : "?"}kind=document`}
-            className={`rounded-none px-3 py-1.5 transition ${
+            className={`rounded-none px-3 py-1.5 transition-all duration-150 ease-out active:scale-[0.97] ${
               kind === "document" ? "bg-accent text-white" : "bg-surface text-foreground hover:brightness-110"
             }`}
           >
@@ -138,7 +145,7 @@ export default async function NewDocumentPage({
           </Link>
           <Link
             href={`${kindSwitchBase}${kindSwitchBase.includes("?") ? "&" : "?"}kind=folder`}
-            className={`rounded-none px-3 py-1.5 transition ${
+            className={`rounded-none px-3 py-1.5 transition-all duration-150 ease-out active:scale-[0.97] ${
               kind === "folder" ? "bg-accent text-white" : "bg-surface text-foreground hover:brightness-110"
             }`}
           >
@@ -217,13 +224,8 @@ export default async function NewDocumentPage({
         {kind === "document" && <MarkdownEditor name="content" />}
 
         <div className="flex shrink-0 items-center gap-3">
-          <button
-            type="submit"
-            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            保存
-          </button>
-          <Link href={cancelHref} className="text-sm text-muted underline">
+          <SubmitButton className={btnPrimary}>保存</SubmitButton>
+          <Link href={cancelHref} className={linkMuted}>
             キャンセル
           </Link>
         </div>

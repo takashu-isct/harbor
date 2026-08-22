@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { FileText, SquarePen } from "lucide-react";
 import { auth } from "@/auth";
 import {
   findActiveAffiliationsByEmail,
@@ -8,6 +9,7 @@ import {
 } from "@/lib/sheet";
 import { canAccessCategory, canAccessTop, splitCategory, timeAgo } from "@/lib/documentCategory";
 import { DocumentsLayout } from "@/components/DocumentsLayout";
+import { btnPrimary, linkMutedXs, tileHover } from "@/lib/styles";
 
 export default async function DocumentsPage({
   params,
@@ -36,14 +38,11 @@ export default async function DocumentsPage({
     <DocumentsLayout groupId={id} activePath={[]}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-          <span aria-hidden>📝</span>
+          <FileText className="h-5 w-5" aria-hidden />
           最近の文書
         </h1>
         {affiliation.roles.length > 0 && (
-          <Link
-            href={`/org/${id}/documents/new`}
-            className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
+          <Link href={`/org/${id}/documents/new`} className={btnPrimary}>
             新規作成
           </Link>
         )}
@@ -64,12 +63,12 @@ export default async function DocumentsPage({
             return (
               <li
                 key={m.id}
-                className="flex items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+                className={`flex items-center gap-3 bg-surface px-4 py-3 text-sm ${tileHover}`}
               >
                 <Link href={`/org/${id}/documents/${m.id}`} className="flex flex-1 flex-col gap-1">
                   <span className="text-xs text-muted">{m.category}</span>
                   <span className="flex flex-wrap items-center gap-3">
-                    <span aria-hidden>📄</span>
+                    <FileText className="h-4 w-4 shrink-0" aria-hidden />
                     <span className="text-foreground">{m.title}</span>
                     <span className="ml-auto flex items-center gap-2 text-xs text-muted">
                       <span className="flex h-5 w-5 shrink-0 items-center justify-center bg-accent/20 text-[10px] font-semibold text-accent">
@@ -82,9 +81,10 @@ export default async function DocumentsPage({
                 {canWrite && (
                   <Link
                     href={`/org/${id}/documents/${m.id}/edit`}
-                    className="shrink-0 text-xs text-muted underline hover:text-foreground"
+                    className={`shrink-0 ${linkMutedXs}`}
                   >
-                    ✏️ 編集
+                    <SquarePen className="h-3.5 w-3.5" aria-hidden />
+                    編集
                   </Link>
                 )}
               </li>

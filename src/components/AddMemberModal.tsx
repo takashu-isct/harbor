@@ -1,6 +1,9 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Plus, X } from "lucide-react";
+import { SubmitButton } from "./SubmitButton";
+import { btnPrimary } from "@/lib/styles";
 
 export function AddMemberModal({
   action,
@@ -24,12 +27,9 @@ export function AddMemberModal({
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-      >
-        + メンバーを追加
+      <button type="button" onClick={() => setOpen(true)} className={btnPrimary}>
+        <Plus className="h-4 w-4" aria-hidden />
+        メンバーを追加
       </button>
       {open && (
         <div
@@ -46,9 +46,9 @@ export function AddMemberModal({
                 type="button"
                 onClick={() => setOpen(false)}
                 aria-label="閉じる"
-                className="text-sm text-muted hover:text-foreground"
+                className="text-muted transition-colors duration-150 hover:text-foreground"
               >
-                ✕
+                <X className="h-4 w-4" aria-hidden />
               </button>
             </div>
             <form ref={formRef} action={handleSubmit} className="flex flex-col gap-3">
@@ -81,12 +81,7 @@ export function AddMemberModal({
                   </label>
                 ))}
               </div>
-              <button
-                type="submit"
-                className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-              >
-                追加
-              </button>
+              <SubmitButton className={`self-start ${btnPrimary}`}>追加</SubmitButton>
             </form>
           </div>
         </div>

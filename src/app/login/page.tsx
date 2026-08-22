@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { BookOpen, KeyRound, Link2, Wallet } from "lucide-react";
 import { signIn } from "@/auth";
 
 function LoginButton({ compact }: { compact?: boolean }) {
@@ -13,8 +15,8 @@ function LoginButton({ compact }: { compact?: boolean }) {
         type="submit"
         className={
           compact
-            ? "rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-            : "rounded-none bg-accent px-8 py-3.5 text-base font-medium text-white transition hover:brightness-110"
+            ? "rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition-all duration-150 ease-out hover:brightness-110 active:scale-[0.97] active:brightness-95"
+            : "rounded-none bg-accent px-8 py-3.5 text-base font-medium text-white transition-all duration-150 ease-out hover:brightness-110 active:scale-[0.97] active:brightness-95"
         }
       >
         Googleでログイン
@@ -25,22 +27,22 @@ function LoginButton({ compact }: { compact?: boolean }) {
 
 const features = [
   {
-    icon: "📒",
+    icon: BookOpen,
     title: "引き継ぎがラクになる",
     body: "会計や名簿、リンク集がCREW Harborに積み上がっていく。毎年ゼロから資料を作り直さなくていい。",
   },
   {
-    icon: "💰",
+    icon: Wallet,
     title: "会計をその場で記帳",
     body: "団体のお金の動きを、所属する人なら誰でもその場で記録・共有できる。",
   },
   {
-    icon: "🔑",
+    icon: KeyRound,
     title: "Googleログインだけ",
     body: "パスワードは増やさない。招待された人だけが、団体・役職に応じた権限で入れる。",
   },
   {
-    icon: "🔗",
+    icon: Link2,
     title: "よく使うツールを1か所に",
     body: "Discordやスプレッドシートなど、団体で使っているサービスへのリンクをホーム画面のように並べられる。",
   },
@@ -57,17 +59,26 @@ export default async function LoginPage({
     <div className="flex flex-1 flex-col">
       <header className="flex items-center justify-between border-b border-surface px-6 py-3">
         <div className="inline-flex items-center rounded-none bg-white px-3 py-1.5">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-horizontal.jpg" alt="CREW Harbor" className="h-6 w-auto" />
+          <Image
+            src="/logo-horizontal.jpg"
+            alt="CREW Harbor"
+            width={1920}
+            height={600}
+            priority
+            className="h-6 w-auto"
+          />
         </div>
         <LoginButton compact />
       </header>
 
       <section>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src="/hero-sunset.jpg"
           alt="CREW HARBOR 毎年、ゼロから始めない。積み上げてきたものを、次の代へ積み替える場所。"
+          width={1600}
+          height={900}
+          priority
+          sizes="100vw"
           className="h-auto w-full"
         />
       </section>
@@ -93,9 +104,7 @@ export default async function LoginPage({
               key={f.title}
               className="flex flex-col gap-1.5 rounded-none bg-surface p-4"
             >
-              <span className="text-xl" aria-hidden>
-                {f.icon}
-              </span>
+              <f.icon className="h-5 w-5 text-accent" aria-hidden />
               <h2 className="text-sm font-semibold text-foreground">{f.title}</h2>
               <p className="text-xs text-muted">{f.body}</p>
             </div>

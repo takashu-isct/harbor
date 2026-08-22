@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { UserCog } from "lucide-react";
 import { auth } from "@/auth";
 import {
   addRole,
@@ -14,6 +14,9 @@ import {
 } from "@/lib/sheet";
 import { RoleEditForm } from "@/components/RoleEditForm";
 import { UnsavedChangesProvider } from "@/components/UnsavedChangesGuard";
+import { BackLink } from "@/components/BackLink";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnPrimary } from "@/lib/styles";
 
 async function requireAdmin(id: string) {
   const session = await auth();
@@ -89,11 +92,9 @@ export default async function RolesPage({
     <UnsavedChangesProvider>
       <div className="flex flex-1 flex-col gap-6 px-6 py-6">
         <div>
-          <Link href={`/org/${id}/members`} className="text-sm text-muted underline">
-            ← メンバー管理に戻る
-          </Link>
+          <BackLink href={`/org/${id}/members`}>メンバー管理に戻る</BackLink>
           <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-            <span aria-hidden>🎭</span>
+            <UserCog className="h-5 w-5" aria-hidden />
             ロール管理
           </h1>
           <p className="mt-1 text-sm text-muted">
@@ -125,12 +126,7 @@ export default async function RolesPage({
             <input type="checkbox" name="isAdmin" />
             管理者権限を付与する
           </label>
-          <button
-            type="submit"
-            className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            追加
-          </button>
+          <SubmitButton className={`self-start ${btnPrimary}`}>追加</SubmitButton>
         </form>
       </div>
     </UnsavedChangesProvider>

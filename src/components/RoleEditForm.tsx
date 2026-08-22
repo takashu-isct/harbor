@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useUnsavedChangesGuard } from "./UnsavedChangesGuard";
+import { SubmitButton } from "./SubmitButton";
 
 export function RoleEditForm({
   role,
@@ -42,14 +43,13 @@ export function RoleEditForm({
         />
         管理者権限
       </label>
-      <button
-        type="submit"
-        className={`rounded-none px-3 py-1.5 text-xs font-medium transition ${
+      <SubmitButton
+        className={`rounded-none px-3 py-1.5 text-xs font-medium transition-all duration-150 ease-out active:scale-[0.97] disabled:pointer-events-none disabled:active:scale-100 ${
           dirty ? "bg-accent text-white hover:brightness-110" : "bg-background text-muted"
         }`}
       >
         更新
-      </button>
+      </SubmitButton>
     </form>
   );
 }

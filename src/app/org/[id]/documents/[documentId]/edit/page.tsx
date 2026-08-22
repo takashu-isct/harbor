@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { SquarePen } from "lucide-react";
 import { auth } from "@/auth";
 import { findActiveAffiliationsByEmail, findDocumentById, updateDocument } from "@/lib/sheet";
 import { canAccessTop, splitCategory } from "@/lib/documentCategory";
 import { DocumentsLayout } from "@/components/DocumentsLayout";
 import { MarkdownEditor } from "@/components/MarkdownEditor";
 import { UnsavedChangesProvider } from "@/components/UnsavedChangesGuard";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnPrimary, linkMuted } from "@/lib/styles";
 
 export default async function EditDocumentPage({
   params,
@@ -61,7 +64,7 @@ export default async function EditDocumentPage({
     <UnsavedChangesProvider>
       <DocumentsLayout groupId={id} activePath={categoryPath}>
         <h1 className="flex items-center gap-2 text-lg font-semibold text-foreground">
-          <span aria-hidden>✏️</span>
+          <SquarePen className="h-5 w-5" aria-hidden />
           文書を編集
           <span className="text-sm font-normal text-muted">({doc.category})</span>
         </h1>
@@ -81,13 +84,8 @@ export default async function EditDocumentPage({
           <MarkdownEditor name="content" defaultValue={doc.content} />
 
           <div className="flex shrink-0 items-center gap-3">
-            <button
-              type="submit"
-              className="rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-            >
-              保存
-            </button>
-            <Link href={`/org/${id}/documents/${documentId}`} className="text-sm text-muted underline">
+            <SubmitButton className={btnPrimary}>保存</SubmitButton>
+            <Link href={`/org/${id}/documents/${documentId}`} className={linkMuted}>
               キャンセル
             </Link>
           </div>

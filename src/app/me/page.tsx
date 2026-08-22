@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Settings, Wrench } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import { findFoundingApplications, findPersonByEmail, isHarborAdmin } from "@/lib/sheet";
 import { PERSONAL_TOOLS } from "@/lib/tools";
 import { AppTile } from "@/components/AppTile";
 import { LocationSwitcher } from "@/components/LocationSwitcher";
+import { linkMuted, linkMutedXs } from "@/lib/styles";
 
 export default async function PersonalHome() {
   const session = await auth();
@@ -35,7 +37,7 @@ export default async function PersonalHome() {
               await signOut({ redirectTo: "/login" });
             }}
           >
-            <button type="submit" className="text-sm text-muted underline">
+            <button type="submit" className={linkMuted}>
               ログアウト
             </button>
           </form>
@@ -46,8 +48,9 @@ export default async function PersonalHome() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm text-muted">個人</h2>
-            <Link href="/me/settings" className="text-xs text-muted underline">
-              ⚙️ 表示設定
+            <Link href="/me/settings" className={linkMutedXs}>
+              <Settings className="h-3.5 w-3.5" aria-hidden />
+              表示設定
             </Link>
           </div>
           <div className="flex flex-wrap gap-4">
@@ -63,7 +66,7 @@ export default async function PersonalHome() {
             {harborAdmin && (
               <AppTile
                 href="/admin"
-                icon="🛠️"
+                icon={Wrench}
                 label="Harbor管理"
                 badge={foundingPendingCount || undefined}
               />

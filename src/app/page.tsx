@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Building2, CircleUser } from "lucide-react";
 import { auth, signOut } from "@/auth";
 import {
   addApplication,
@@ -10,6 +11,8 @@ import {
   findGroupById,
   findPersonByEmail,
 } from "@/lib/sheet";
+import { SubmitButton } from "@/components/SubmitButton";
+import { btnPrimary, btnSecondary, linkMuted, tileHover } from "@/lib/styles";
 
 function LogoutButton() {
   return (
@@ -19,7 +22,7 @@ function LogoutButton() {
         await signOut({ redirectTo: "/login" });
       }}
     >
-      <button type="submit" className="text-sm text-muted underline">
+      <button type="submit" className={linkMuted}>
         ログアウト
       </button>
     </form>
@@ -128,12 +131,7 @@ async function ApplicationGate({
           placeholder="希望する役職(任意、例: 一般部員)"
           className="rounded-none bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted"
         />
-        <button
-          type="submit"
-          className="rounded-none bg-accent px-6 py-3 text-sm font-medium text-white transition hover:brightness-110"
-        >
-          申請する
-        </button>
+        <SubmitButton className={btnPrimary}>申請する</SubmitButton>
       </form>
 
       <form
@@ -151,12 +149,7 @@ async function ApplicationGate({
         <p className="text-left text-xs text-muted">
           開発部が内容を確認のうえ、団体を作成します。少しお時間をいただく場合があります。
         </p>
-        <button
-          type="submit"
-          className="rounded-none bg-surface px-6 py-3 text-sm font-medium text-foreground transition hover:brightness-110"
-        >
-          設立を申請する
-        </button>
+        <SubmitButton className={btnSecondary}>設立を申請する</SubmitButton>
       </form>
 
       <LogoutButton />
@@ -192,9 +185,9 @@ export default async function Home() {
         </p>
         <Link
           href="/me"
-          className="flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+          className={`flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground ${tileHover}`}
         >
-          <span aria-hidden>🙍</span>
+          <CircleUser className="h-4 w-4" aria-hidden />
           個人プロフィールを見る
         </Link>
         <LogoutButton />
@@ -218,9 +211,9 @@ export default async function Home() {
           <li key={affiliation.groupId}>
             <Link
               href={`/org/${affiliation.groupId}`}
-              className="flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+              className={`flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground ${tileHover}`}
             >
-              <span aria-hidden>🏢</span>
+              <Building2 className="h-4 w-4" aria-hidden />
               {group?.name ?? affiliation.groupId}
               ({affiliation.roles.join("・") || "所属"})
             </Link>
@@ -229,9 +222,9 @@ export default async function Home() {
         <li>
           <Link
             href="/me"
-            className="flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground transition hover:brightness-110"
+            className={`flex items-center gap-2 rounded-none bg-surface px-6 py-3 text-sm text-foreground ${tileHover}`}
           >
-            <span aria-hidden>🙍</span>
+            <CircleUser className="h-4 w-4" aria-hidden />
             個人
           </Link>
         </li>

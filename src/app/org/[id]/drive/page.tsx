@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { Folder, HardDrive } from "lucide-react";
 import { auth } from "@/auth";
 import {
   addCloudLink,
@@ -12,6 +12,9 @@ import {
   removeCloudLink,
 } from "@/lib/sheet";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { SubmitButton } from "@/components/SubmitButton";
+import { BackLink } from "@/components/BackLink";
+import { btnDangerXs, btnPrimary, tileHover } from "@/lib/styles";
 
 function isSafeHttpUrl(value: string): boolean {
   try {
@@ -88,11 +91,9 @@ export default async function DrivePage({
   return (
     <div className="flex flex-1 flex-col gap-6 px-6 py-6">
       <div>
-        <Link href={`/org/${id}`} className="text-sm text-muted underline">
-          ← {group?.name ?? id} に戻る
-        </Link>
+        <BackLink href={`/org/${id}`}>{group?.name ?? id} に戻る</BackLink>
         <h1 className="mt-2 flex items-center gap-2 text-xl font-semibold text-foreground">
-          <span aria-hidden>📁</span>
+          <HardDrive className="h-5 w-5" aria-hidden />
           Drive
         </h1>
         <p className="mt-1 text-sm text-muted">
@@ -110,7 +111,7 @@ export default async function DrivePage({
           {visibleLinks.map((l) => (
             <li
               key={l.url}
-              className="flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm transition hover:brightness-110"
+              className={`flex flex-wrap items-center gap-3 bg-surface px-4 py-3 text-sm ${tileHover}`}
             >
               <a
                 href={l.url}
@@ -118,7 +119,7 @@ export default async function DrivePage({
                 rel="noopener noreferrer"
                 className="flex flex-1 flex-wrap items-center gap-3"
               >
-                <span aria-hidden>📁</span>
+                <Folder className="h-4 w-4 shrink-0" aria-hidden />
                 <span className="text-foreground">{l.label}</span>
                 <span className="text-xs text-muted">{l.url}</span>
                 <span className="ml-auto text-xs text-muted">
@@ -131,7 +132,7 @@ export default async function DrivePage({
                   <input type="hidden" name="url" value={l.url} />
                   <ConfirmButton
                     message={`「${l.label}」を削除します。よろしいですか?`}
-                    className="rounded-none bg-danger/20 px-2 py-1 text-xs text-danger"
+                    className={btnDangerXs}
                   >
                     削除
                   </ConfirmButton>
@@ -187,12 +188,7 @@ export default async function DrivePage({
               <option value="writer">編集者</option>
             </select>
           </label>
-          <button
-            type="submit"
-            className="self-start rounded-none bg-accent px-4 py-2 text-sm font-medium text-white transition hover:brightness-110"
-          >
-            追加
-          </button>
+          <SubmitButton className={`self-start ${btnPrimary}`}>追加</SubmitButton>
         </form>
       )}
     </div>
